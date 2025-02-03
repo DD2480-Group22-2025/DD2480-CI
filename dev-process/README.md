@@ -132,7 +132,7 @@ project/
 ├── requirements.txt          # Python dependencies
 ├── start_services.sh         # Service starter script
 ├── src/
-│   ├── server.py            # Main Flask application
+│   ├── main.py              # Main FastAPI application
 │   ├── config.py            # Configuration management
 │   ├── syntax_checker.py    # P1 implementation
 │   ├── test_runner.py       # P2 implementation
