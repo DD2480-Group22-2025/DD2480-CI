@@ -33,3 +33,4 @@ uvloop==0.21.0
 watchfiles==1.0.4
 websockets==14.2
 pylint=3.3.4
+validators
