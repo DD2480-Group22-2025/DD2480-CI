@@ -6,20 +6,17 @@ def check_syntax(repo):
     # this function checks the syntax of the code using pylint
     # returns true or false based on if the syntax passes
 
-    # make sure the file exists
     if not os.path.exists(repo):
         print("File does not exist")
         return False
     
     try:
-        # Check syntax
         syntax = subprocess.run(["pylint", f"{repo}", "--errors-only"], capture_output=True, text=True)
     
     except Exception as e:
         print("Error in syntax check: ", e)
         return False
     
-    # check if there is a syntax error
     if "syntax-error" not in syntax.stdout:
         print("Syntax check passed with no errors.")
         return True
