@@ -1,21 +1,28 @@
 # Utility functions
 import os
 import subprocess
-from routers.check_syntax import REPO_PATH
 
-def compile_project(repo_url):
-    # os.system(f"git clone {repo_url} {REPO_PATH} || (cd {REPO_PATH} && git pull)")  # Clone or pull latest
+def check_syntax(repo):
+    # this function checks the syntax of the code using pylint
+    # returns true or false based on if the syntax passes
 
-    # # Install dependencies
-    # pip_install = subprocess.run(["pip", "install", "-r", f"{REPO_PATH}/requirements.txt"], capture_output=True, text=True)
-
-    # # Check syntax
-    # syntax_check = subprocess.run(["python", "-m", "py_compile", f"{REPO_PATH}/*.py"], capture_output=True, text=True)
-
-    # # Linting
-    # lint_check = subprocess.run(["flake8", REPO_PATH], capture_output=True, text=True)
-
-    # if pip_install.returncode == 0 and syntax_check.returncode == 0 and lint_check.returncode == 0:
-    #     return True, "Compilation Successful"
+    # make sure the file exists
+    if not os.path.exists(repo):
+        print("File does not exist")
+        return False
     
-    return False
+    try:
+        # Check syntax
+        syntax = subprocess.run(["pylint", f"{repo}", "--errors-only"], capture_output=True, text=True)
+    
+    except Exception as e:
+        print("Error in syntax check: ", e)
+        return False
+    
+    # check if there is a syntax error
+    if "syntax-error" not in syntax.stdout:
+        print("Syntax check passed with no errors.")
+        return True
+    else:
+        print("Syntax check failed. There is a syntax error.")
+        return False
