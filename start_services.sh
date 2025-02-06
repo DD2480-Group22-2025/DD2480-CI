@@ -4,27 +4,40 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Create necessary directories
+echo "Creating config directories..."
 mkdir -p ~/.config/systemd/user/
 mkdir -p ~/.config/ngrok/
 
 # Copy configuration files with absolute paths
-cp "${SCRIPT_DIR}/deployment/ngrok.yml" ~/.config/ngrok/
-cp "${SCRIPT_DIR}/deployment/ci-server.service" ~/.config/systemd/user/
-cp "${SCRIPT_DIR}/deployment/ngrok.service" ~/.config/systemd/user/
+echo "Copying configuration files..."
+cp -v "${SCRIPT_DIR}/deployment/ngrok.yml" ~/.config/ngrok/
+cp -v "${SCRIPT_DIR}/deployment/ci-server.service" ~/.config/systemd/user/
+cp -v "${SCRIPT_DIR}/deployment/ngrok.service" ~/.config/systemd/user/
+
+# Verify files exist
+echo -e "\nVerifying files..."
+echo "Checking ngrok config:"
+ls -l ~/.config/ngrok/ngrok.yml
+echo -e "\nChecking service files:"
+ls -l ~/.config/systemd/user/ci-server.service
+ls -l ~/.config/systemd/user/ngrok.service
 
 # Reload systemd daemon
+echo -e "\nReloading systemd daemon..."
 systemctl --user daemon-reload
 
 # Stop services if they're running
+echo "Stopping any existing services..."
 systemctl --user stop ci-server.service ngrok.service 2>/dev/null
 
 # Start services in correct order
-echo "Starting CI server..."
+echo -e "\nStarting CI server..."
 systemctl --user start ci-server.service
 echo "Starting ngrok..."
 systemctl --user start ngrok.service
 
 # Enable services to start on boot
+echo -e "\nEnabling services..."
 systemctl --user enable ci-server.service
 systemctl --user enable ngrok.service
 
