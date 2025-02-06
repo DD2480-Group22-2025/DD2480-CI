@@ -16,8 +16,8 @@ if [ -f .ngrok.pid ]; then
     rm .ngrok.pid
 fi
 
-# Additional cleanup
-pkill -f "uvicorn app.main:app" || true
+# Additional cleanup (using full path to avoid permission issues)
+pkill -f "venv/bin/python -m uvicorn" || true
 pkill -f "ngrok http" || true
 
 echo "Services stopped." 

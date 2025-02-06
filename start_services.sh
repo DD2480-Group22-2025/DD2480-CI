@@ -16,21 +16,29 @@ echo "Cleaning up any existing processes..."
 pkill -f "uvicorn app.main:app" || true
 pkill -f "ngrok http" || true
 
-# Activate virtual environment if it exists
-if [ -d "venv" ]; then
-    echo "Activating virtual environment..."
-    source venv/bin/activate
+# Setup virtual environment if it doesn't exist or is broken
+if [ ! -f "venv/bin/activate" ]; then
+    echo "Creating new virtual environment..."
+    rm -rf venv
+    python3 -m venv venv
+    chmod -R u+w venv
 fi
 
-# Install requirements if needed
-if [ -f "requirements.txt" ]; then
-    echo "Installing requirements..."
-    pip install -r requirements.txt
-fi
+# Activate virtual environment
+echo "Activating virtual environment..."
+source venv/bin/activate
+
+# Upgrade pip
+echo "Upgrading pip..."
+pip install --upgrade pip
+
+# Install requirements
+echo "Installing requirements..."
+pip install fastapi uvicorn
 
 # Start the FastAPI server in the background
 echo "Starting FastAPI server..."
-python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8022 > fastapi.log 2>&1 &
+venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8022 > fastapi.log 2>&1 &
 FASTAPI_PID=$!
 
 # Wait for FastAPI to start
@@ -64,3 +72,6 @@ echo "Ngrok: ${SCRIPT_DIR}/ngrok.log"
 # Save PIDs for later cleanup
 echo "$FASTAPI_PID" > .fastapi.pid
 echo "$NGROK_PID" > .ngrok.pid
+
+# Deactivate virtual environment
+deactivate
