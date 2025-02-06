@@ -18,6 +18,6 @@ fi
 
 # Additional cleanup (using full path to avoid permission issues)
 pkill -f "venv/bin/python -m uvicorn" || true
-pkill -f "ngrok http" || true
+pkill -f "~/bin/ngrok http" || true
 
 echo "Services stopped." 
