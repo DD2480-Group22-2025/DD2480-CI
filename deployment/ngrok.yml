@@ -1,0 +1,9 @@
+version: "2"
+authtoken: ${NGROK_AUTHTOKEN}
+web_addr: localhost:4040
+tunnels:
+  ci-server:
+    proto: http
+    addr: 8022
+    subdomain: ci-server
+    inspect: true
