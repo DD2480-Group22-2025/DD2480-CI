@@ -5,51 +5,62 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Create necessary directories
 echo "Creating config directories..."
-mkdir -p ~/.config/systemd/user/
 mkdir -p ~/.config/ngrok/
 
-# Copy configuration files with absolute paths
-echo "Copying configuration files..."
+# Copy ngrok configuration
+echo "Copying ngrok configuration..."
 cp -v "${SCRIPT_DIR}/deployment/ngrok.yml" ~/.config/ngrok/
-cp -v "${SCRIPT_DIR}/deployment/ci-server.service" ~/.config/systemd/user/
-cp -v "${SCRIPT_DIR}/deployment/ngrok.service" ~/.config/systemd/user/
 
-# Verify files exist
-echo -e "\nVerifying files..."
-echo "Checking ngrok config:"
-ls -l ~/.config/ngrok/ngrok.yml
-echo -e "\nChecking service files:"
-ls -l ~/.config/systemd/user/ci-server.service
-ls -l ~/.config/systemd/user/ngrok.service
+# Kill any existing processes
+echo "Cleaning up any existing processes..."
+pkill -f "uvicorn app.main:app" || true
+pkill -f "ngrok http" || true
 
-# Reload systemd daemon
-echo -e "\nReloading systemd daemon..."
-systemctl --user daemon-reload
+# Activate virtual environment if it exists
+if [ -d "venv" ]; then
+    echo "Activating virtual environment..."
+    source venv/bin/activate
+fi
 
-# Stop services if they're running
-echo "Stopping any existing services..."
-systemctl --user stop ci-server.service ngrok.service 2>/dev/null
+# Install requirements if needed
+if [ -f "requirements.txt" ]; then
+    echo "Installing requirements..."
+    pip install -r requirements.txt
+fi
 
-# Start services in correct order
-echo -e "\nStarting CI server..."
-systemctl --user start ci-server.service
+# Start the FastAPI server in the background
+echo "Starting FastAPI server..."
+python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8022 > fastapi.log 2>&1 &
+FASTAPI_PID=$!
+
+# Wait for FastAPI to start
+echo "Waiting for FastAPI to start..."
+sleep 5
+
+# Start ngrok in the background
 echo "Starting ngrok..."
-systemctl --user start ngrok.service
+ngrok http --config ~/.config/ngrok/ngrok.yml 8022 > ngrok.log 2>&1 &
+NGROK_PID=$!
 
-# Enable services to start on boot
-echo -e "\nEnabling services..."
-systemctl --user enable ci-server.service
-systemctl --user enable ngrok.service
+# Wait for ngrok to start
+echo "Waiting for ngrok to start..."
+sleep 5
 
-# Show status
-echo -e "\nService Status:"
+# Show process status
+echo -e "\nProcess Status:"
 echo "==============="
-systemctl --user status ci-server.service --no-pager
-echo -e "\n"
-systemctl --user status ngrok.service --no-pager
+echo "FastAPI PID: $FASTAPI_PID"
+echo "Ngrok PID: $NGROK_PID"
 
 # Show ngrok URL
-echo -e "\nNgrok tunnel info (may take a few seconds to establish):"
-echo "==============================================="
-sleep 5
+echo -e "\nNgrok tunnel info:"
+echo "================"
 curl -s http://localhost:4022/api/tunnels | grep -o '"public_url":"[^"]*' | cut -d'"' -f4
+
+echo -e "\nLogs are available in:"
+echo "FastAPI: ${SCRIPT_DIR}/fastapi.log"
+echo "Ngrok: ${SCRIPT_DIR}/ngrok.log"
+
+# Save PIDs for later cleanup
+echo "$FASTAPI_PID" > .fastapi.pid
+echo "$NGROK_PID" > .ngrok.pid
