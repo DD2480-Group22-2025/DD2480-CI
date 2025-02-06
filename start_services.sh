@@ -1,13 +1,16 @@
 #!/bin/bash
 
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Create necessary directories
 mkdir -p ~/.config/systemd/user/
 mkdir -p ~/.config/ngrok/
 
-# Copy configuration files
-cp deployment/ngrok.yml ~/.config/ngrok/
-cp deployment/ci-server.service ~/.config/systemd/user/
-cp deployment/ngrok.service ~/.config/systemd/user/
+# Copy configuration files with absolute paths
+cp "${SCRIPT_DIR}/deployment/ngrok.yml" ~/.config/ngrok/
+cp "${SCRIPT_DIR}/deployment/ci-server.service" ~/.config/systemd/user/
+cp "${SCRIPT_DIR}/deployment/ngrok.service" ~/.config/systemd/user/
 
 # Reload systemd daemon
 systemctl --user daemon-reload
@@ -36,4 +39,4 @@ systemctl --user status ngrok.service --no-pager
 echo -e "\nNgrok tunnel info (may take a few seconds to establish):"
 echo "==============================================="
 sleep 5
-curl -s http://localhost:4040/api/tunnels | grep -o '"public_url":"[^"]*' | cut -d'"' -f4
+curl -s http://localhost:4022/api/tunnels | grep -o '"public_url":"[^"]*' | cut -d'"' -f4
