@@ -47,7 +47,7 @@ sleep 5
 
 # Start ngrok in the background
 echo "Starting ngrok..."
-~/bin/ngrok http --config ~/.config/ngrok/ngrok.yml 8022 > ngrok.log 2>&1 &
+~/bin/ngrok http 8022 --config ~/.config/ngrok/ngrok.yml > ngrok.log 2>&1 &
 NGROK_PID=$!
 
 # Wait for ngrok to start

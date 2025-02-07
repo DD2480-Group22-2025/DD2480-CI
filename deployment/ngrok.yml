@@ -1,5 +1,4 @@
 version: "2"
-authtoken: ${NGROK_AUTHTOKEN}
 web_addr: localhost:4022
 tunnels:
   group22-ci:
