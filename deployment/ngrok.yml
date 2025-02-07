@@ -4,5 +4,4 @@ tunnels:
   group22-ci:
     proto: http
     addr: 8022
-    subdomain: group22-ci
     inspect: true
