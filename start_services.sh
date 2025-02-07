@@ -7,9 +7,20 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "Creating config directories..."
 mkdir -p ~/.config/ngrok/
 
-# Copy ngrok configuration
-echo "Copying ngrok configuration..."
-cp -v "${SCRIPT_DIR}/deployment/ngrok.yml" ~/.config/ngrok/
+# Update ngrok configuration while preserving authtoken
+echo "Updating ngrok configuration..."
+if [ -f ~/.config/ngrok/ngrok.yml ]; then
+    # Extract existing authtoken
+    AUTH_TOKEN=$(grep "authtoken:" ~/.config/ngrok/ngrok.yml | cut -d' ' -f2)
+    # Copy new config
+    cp -v "${SCRIPT_DIR}/deployment/ngrok.yml" ~/.config/ngrok/ngrok.yml
+    # Restore authtoken if it exists
+    if [ ! -z "$AUTH_TOKEN" ]; then
+        echo "authtoken: $AUTH_TOKEN" >> ~/.config/ngrok/ngrok.yml
+    fi
+else
+    cp -v "${SCRIPT_DIR}/deployment/ngrok.yml" ~/.config/ngrok/ngrok.yml
+fi
 
 # Kill any existing processes
 echo "Cleaning up any existing processes..."
