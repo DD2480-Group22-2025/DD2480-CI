@@ -28,5 +28,6 @@ replay_pid*
 
 # venv
 .venv/*
+venv
 
 __pycache__
