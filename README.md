@@ -33,12 +33,14 @@ rm ngrok-v3-stable-linux-amd64.tgz
 3. Start the services:
 
 ```bash
+chmod +x start_services.sh
 ./start_services.sh
 ```
 
 4. Stop the services:
 
 ```bash
+chmod +x stop_services.sh
 ./stop_services.sh
 ```
 
