@@ -5,6 +5,7 @@ import os
 sys.path.append('app/lib')
 from util import check_syntax, clone_repo
 
+
 class TestSyntax(unittest.TestCase):
 
     def test_check_syntax(self):
@@ -34,4 +35,3 @@ class TestClone(unittest.TestCase):
         # check if the function clone_repo is working correctly
         self.assertTrue(clone_repo("https://github.com/rtyley/small-test-repo"))
 
-    
