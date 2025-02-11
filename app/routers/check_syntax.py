@@ -7,11 +7,10 @@ from util import check_syntax, clone_repo
 
 router = APIRouter()
 
-REPO_PATH = "https://github.com/rtyley/small-test-repo"
+REPO_PATH = ""
 
 @router.post("/check_syntax")
 async def compile(request: Request):
-    print(":SLKEFSEFSEO")
 
     if clone_repo(REPO_PATH):
         print("Repo cloned successfully")

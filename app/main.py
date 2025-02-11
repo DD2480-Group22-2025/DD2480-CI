@@ -11,5 +11,5 @@ app.include_router(run_tests.router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello, World! jhdjdf"}
+    return {"message": "Hello, World!"}
 
