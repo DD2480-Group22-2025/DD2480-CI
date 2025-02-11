@@ -27,7 +27,11 @@ replay_pid*
 .env
 
 # venv
-.venv/*
+.venv
 venv
 
 __pycache__
+
+.pytest_cache
+
+cloned_repo
