@@ -52,19 +52,16 @@ def get_entries_by_date(build_date : str):
     conn.close()
     return result
 
-def create_new_entry(commit_hash : str, build_log : str):
+def create_new_entry(commit_hash : str, linter_result : str, test_result : str):
     """Create a new entry in CI.db with a given commit hashsum and build log
     Will throw assertion error if an existing build_log has the same hashsum
     """
-    query = "INSERT INTO build_log(commit_hash, build_date, build_log) VALUES (?, ?, ?)"
+    query = "INSERT INTO build_log(commit_hash, build_date, linter_result, test_result) VALUES (?, ?, ?, ?)"
     conn = sqlite3.connect(db_file)
     cur  = conn.cursor()
     build_date = datetime.datetime.today().strftime(time_format)
     assert get_entry_by_commit(commit_hash) == []   # No earlier build with same SHA-sum
-    cur.execute(query, (commit_hash, build_log, build_date))
+    cur.execute(query, (commit_hash, linter_result, test_result, build_date))
     conn.commit()
     print(cur.fetchall())
     conn.close()
-
-if __name__ == "__main__":
-    print(get_entries())
