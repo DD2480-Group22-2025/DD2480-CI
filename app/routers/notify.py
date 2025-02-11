@@ -4,12 +4,18 @@ import uvicorn
 import sys
 sys.path.append('app/lib')
 from util import check_syntax, clone_repo
+from typing import Any
+from pydantic import BaseModel
+
 router = APIRouter()
 
 # REPO_PATH = ""
 
+class WebhookPayload(BaseModel):
+    data: Any
+
 @router.post("/webhook")
-async def notify(request: Request):
+async def notify(payload: WebhookPayload):
 
     # payload = await request.json()
 
@@ -31,4 +37,5 @@ async def notify(request: Request):
     #         # run_tests()
     #           return {"status": "ok"}    
     # return {"status": "not ok"}
-    return {"message": "Notify"}
+
+    return {"message": "Notify", "received_data": payload}
