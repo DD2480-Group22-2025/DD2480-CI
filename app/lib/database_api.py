@@ -65,7 +65,3 @@ def create_new_entry(commit_hash : str, linter_result : str, test_result : str):
     conn.commit()
     print(cur.fetchall())
     conn.close()
-
-if __name__ == "__main__":
-    create_new_entry("adfakdfai", "lintlint", "testtest")
-    print(get_entries())
