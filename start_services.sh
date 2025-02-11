@@ -47,9 +47,9 @@ pip install --upgrade pip
 echo "Installing requirements..."
 pip install fastapi uvicorn
 
-# Start the FastAPI server in the background
+# Start the FastAPI server in the background using uvicorn.run
 echo "Starting FastAPI server..."
-venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8022 > fastapi.log 2>&1 &
+venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8022 > fastapi.log 2>&1 &
 FASTAPI_PID=$!
 
 # Wait for FastAPI to start
@@ -58,7 +58,7 @@ sleep 5
 
 # Start ngrok in the background
 echo "Starting ngrok..."
-~/bin/ngrok http 8022 --config ~/.config/ngrok/ngrok.yml > ngrok.log 2>&1 &
+ngrok http 8022 --config ~/.config/ngrok/ngrok.yml > ngrok.log 2>&1 &
 NGROK_PID=$!
 
 # Wait for ngrok to start
