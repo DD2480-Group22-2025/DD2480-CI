@@ -32,7 +32,6 @@ sqlite3==3.37.2
 typer==0.15.1
 typing-extensions==4.12.2
 uvicorn==0.34.0
-uvloop==0.21.0
 watchfiles==1.0.4
 websockets==14.2
 pylint==3.3.4

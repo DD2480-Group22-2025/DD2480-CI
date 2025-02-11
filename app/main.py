@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.routers import check_syntax, notify, run_tests
+import uvicorn
 
 app = FastAPI()
 

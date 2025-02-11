@@ -1,19 +1,23 @@
 # Router running syntax check
 from fastapi import APIRouter, Request
-# from "../lib/util" import compile_project
+import uvicorn
+import sys
+sys.path.append('app/lib')
+from util import check_syntax, clone_repo
 
 router = APIRouter()
 
-REPO_PATH = "/test_repo/git_repo"
+REPO_PATH = ""
 
 @router.post("/check_syntax")
 async def compile(request: Request):
-    
-    data = await request.json()
 
-    data = data['data']
+    if clone_repo(REPO_PATH):
+        print("Repo cloned successfully")
     
-    # run syntax check 
+        if check_syntax("./cloned_repo"):
+            print("Syntax check passed")
+            return {"status": "ok"}   
     
-    return {"status": "ok"}
+    return {"status": "not ok"}
 
