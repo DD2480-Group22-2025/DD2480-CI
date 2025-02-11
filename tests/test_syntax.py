@@ -35,3 +35,7 @@ class TestClone(unittest.TestCase):
         # check if the function clone_repo is working correctly
         self.assertTrue(clone_repo("https://github.com/rtyley/small-test-repo"))
 
+    def test_clone_2(self):
+        # the function removes the cloned_repo directory and clones it again
+        self.assertTrue(clone_repo("https://github.com/rtyley/small-test-repo"))
+
