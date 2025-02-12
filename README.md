@@ -1,5 +1,8 @@
 # DD2480-CI
 
+## Project Description 
+This project implements a Continuous Integration (CI) server that supports CI features such as compilation, syntax checking, testing, result notifications, and build history. 
+
 ## Setup
 
 ### Prerequisites
