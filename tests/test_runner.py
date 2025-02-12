@@ -4,7 +4,6 @@ import os
 import sys
 import coverage
 import shutil
-from unittest.mock import patch, MagicMock
 
 class TestRunner(unittest.TestCase):
     def setUp(self):
