@@ -24,7 +24,8 @@ class BuildLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     commit_hash = Column(String, unique=True, nullable=False)
     build_date = Column(String, nullable=False)
-    build_log = Column(String, nullable=False)
+    test_result = Column(String, nullable=False)
+    lint_result = Column(String, nullable=False)
 
 def init_db():
     """Create database and tables if they don't exist"""
@@ -42,28 +43,28 @@ def get_db():
 def get_entries():
     """Return a list of all existing build logs"""
     db = get_db()
-    return [(entry.id, entry.commit_hash, entry.build_date, entry.build_log) 
+    return [(entry.id, entry.commit_hash, entry.build_date, entry.test_result, entry.lint_result) 
             for entry in db.query(BuildLog).all()]
 
 def get_entry_by_commit(commit_hash: str):
     """Queries database for entry with specified hashsum"""
     db = get_db()
     entry = db.query(BuildLog).filter(BuildLog.commit_hash == commit_hash).first()
-    return [(entry.id, entry.commit_hash, entry.build_date, entry.build_log)] if entry else []
+    return [(entry.id, entry.commit_hash, entry.build_date, entry.test_result, entry.lint_result)] if entry else []
 
 def get_entry_by_id(build_id: int):
     """Queries database for entry with specified id"""
     db = get_db()
     entry = db.query(BuildLog).filter(BuildLog.id == build_id).first()
-    return [(entry.id, entry.commit_hash, entry.build_date, entry.build_log)] if entry else []
+    return [(entry.id, entry.commit_hash, entry.build_date, entry.test_result, entry.lint_result)] if entry else []
 
 def get_entries_by_date(build_date: str):
     """Queries database for all entries made on specified date"""
     db = get_db()
     entries = db.query(BuildLog).filter(BuildLog.build_date == build_date).all()
-    return [(entry.id, entry.commit_hash, entry.build_date, entry.build_log) for entry in entries]
+    return [(entry.id, entry.commit_hash, entry.build_date, entry.test_result, entry.lint_result) for entry in entries]
 
-def create_new_entry(commit_hash: str, build_log: str):
+def create_new_entry(commit_hash: str, test_result: str, lint_result: str):
     """Create a new entry with a given commit hashsum and build log"""
     db = get_db()
     build_date = datetime.today().strftime(time_format)
@@ -75,7 +76,8 @@ def create_new_entry(commit_hash: str, build_log: str):
     new_entry = BuildLog(
         commit_hash=commit_hash,
         build_date=build_date,
-        build_log=build_log
+        test_result=test_result,
+        lint_result=lint_result
     )
     db.add(new_entry)
     db.commit()

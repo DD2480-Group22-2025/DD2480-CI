@@ -66,6 +66,7 @@ class TestUpdateCommitStatus(unittest.TestCase):
     def test_error_accessing_repository(self, mock_github_class):
         """
         Test that update_commit_status handles repository access errors gracefully.
+
         """
         os.environ["CI_SERVER_AUTH_TOKEN"] = "dummy_token"
         os.environ["REPO_OWNER"] = "dummy_owner"
@@ -81,6 +82,7 @@ class TestUpdateCommitStatus(unittest.TestCase):
         self.assertEqual(result["error"], "Repository not found")
         self.assertEqual(result["state"], "success")
         self.assertEqual(result["description"], "test description")
+
 
     @patch("util.Github")
     def test_invalid_state(self, mock_github_class):
