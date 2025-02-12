@@ -19,7 +19,6 @@ class TestUpdateCommitStatus(unittest.TestCase):
         """
         Test that update_commit_status returns the correct data when the GitHub API call succeeds.
         """
-        # Create a dummy commit object with a dummy create_status method.
         dummy_commit = MagicMock()
         dummy_status = MagicMock()
         dummy_status.raw_data = {
@@ -30,23 +29,17 @@ class TestUpdateCommitStatus(unittest.TestCase):
             "url": "https://api.github.com/repos/dummy_owner/dummy_repo/statuses/dummy_commit"
         }
         dummy_commit.create_status.return_value = dummy_status
-        
-        # Create a dummy repository that returns our dummy commit.
         dummy_repo = MagicMock()
         dummy_repo.get_commit.return_value = dummy_commit
-        
-        # Configure the dummy Github instance to return our dummy repository.
         instance = mock_github_class.return_value
         instance.get_repo.return_value = dummy_repo
 
         commit_sha = "dummy_commit"
         state = "success"
         description = "Build passed"
-        
-        # Call the function under test.
+
         result = update_commit_status(commit_sha, state, description)
-        
-        # Verify that the dummy functions were called with expected parameters.
+
         dummy_repo.get_commit.assert_called_once_with(commit_sha)
         dummy_commit.create_status.assert_called_once_with(
             state=state,
@@ -54,7 +47,6 @@ class TestUpdateCommitStatus(unittest.TestCase):
             description=description,
             context="CI Notification"
         )
-        # Assert that the result matches the dummy status's raw_data.
         self.assertEqual(result, dummy_status.raw_data)
 
     @patch("util.Github")
@@ -62,7 +54,6 @@ class TestUpdateCommitStatus(unittest.TestCase):
         """
         Test that update_commit_status raises an exception when required environment variables are missing.
         """
-        # Remove the environment variables.
         os.environ.pop("CI_SERVER_AUTH_TOKEN", None)
         os.environ.pop("REPO_OWNER", None)
         os.environ.pop("REPO_NAME", None)
@@ -76,15 +67,38 @@ class TestUpdateCommitStatus(unittest.TestCase):
         """
         Test that update_commit_status raises an exception if the repository cannot be accessed.
         """
-        # Ensure environment variables are set.
         os.environ["CI_SERVER_AUTH_TOKEN"] = "dummy_token"
         os.environ["REPO_OWNER"] = "dummy_owner"
         os.environ["REPO_NAME"] = "dummy_repo"
         
-        # Simulate an error when calling get_repo.
         instance = mock_github_class.return_value
         instance.get_repo.side_effect = Exception("Repository not found")
         
         with self.assertRaises(Exception) as context:
             update_commit_status("dummy_commit", "success", "Build passed")
         self.assertIn("Error accessing repository: Repository not found", str(context.exception))
+
+    @patch("util.Github")
+    def test_invalid_state(self, mock_github_class):
+        """
+        Test that update_commit_status does not send an update when given an invalid state.
+        """
+        os.environ["CI_SERVER_AUTH_TOKEN"] = "dummy_token"
+        os.environ["REPO_OWNER"] = "dummy_owner"
+        os.environ["REPO_NAME"] = "dummy_repo"
+
+        commit_sha = "dummy_commit"
+        invalid_state = "not_a_state"
+        description = "Invalid state test"
+
+        instance = mock_github_class.return_value
+        dummy_repo = MagicMock()
+        dummy_commit = MagicMock()
+        instance.get_repo.return_value = dummy_repo
+        dummy_repo.get_commit.return_value = dummy_commit
+
+        with self.assertRaises(Exception) as context:
+            update_commit_status(commit_sha, invalid_state, description)
+
+        self.assertIn("Invalid commit status state", str(context.exception))
+        dummy_commit.create_status.assert_not_called()
