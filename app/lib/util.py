@@ -4,6 +4,41 @@ import shutil
 import stat
 import time
 from github import Github  # PyGithub library
+from typing import Dict, Any
+def run_tests(repo_path: str) -> Dict[str, Any]:
+    """
+    Run tests in the specified repository path.
+    Returns a dictionary with test results.
+    """
+    try:
+        # Store current directory
+        original_dir = os.getcwd()
+        
+        # Change to repo directory
+        os.chdir(repo_path)
+        
+        # Run tests and capture output
+        result = subprocess.run(['pytest'], capture_output=True, text=True)
+        
+        # Change back to original directory
+        os.chdir(original_dir)
+        
+        return {
+            "success": result.returncode == 0,
+            "output": result.stdout,
+            "error": result.stderr,
+            "return_code": result.returncode
+        }
+    except Exception as e:
+        if os.getcwd() != original_dir:
+            os.chdir(original_dir)
+        return {
+            "success": False,
+            "output": "",
+            "error": str(e),
+            "return_code": -1
+        }
+
 
 def check_syntax(repo):
     if not os.path.exists(repo):
@@ -90,9 +125,22 @@ def update_commit_status(commit_sha: str, state: str, description: str, context:
     
     try:
         commit = repo.get_commit(commit_sha)
+        
+        # First, try to find and remove any old status with CI/ prefix or default context
+        for status in commit.get_statuses():
+            if status.context.startswith("CI/") or status.context == "CI Notification":
+                # GitHub doesn't allow deleting statuses, so we'll update them to be neutral/skipped
+                commit.create_status(
+                    state="success",
+                    target_url="",
+                    description="Deprecated status check",
+                    context=status.context
+                )
+        
+        # Create the new status
         status = commit.create_status(
-            state=state,           # "pending", "success", or "failure"
-            target_url="",         # Optionally add a URL for build logs
+            state=state,
+            target_url="",
             description=description,
             context=context
         )

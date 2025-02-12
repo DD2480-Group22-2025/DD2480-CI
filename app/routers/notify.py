@@ -3,8 +3,8 @@ import os
 import sys
 import subprocess
 sys.path.append('app/lib')
-from util import check_syntax, clone_repo, update_commit_status, delete_repo
-from typing import Any, Optional
+from util import check_syntax, clone_repo, update_commit_status, delete_repo, run_tests
+from typing import Any, Optional, Dict
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -58,48 +58,56 @@ async def notify(payload: WebhookPayload):
     # Get the commit SHA from the payload
     commit_sha = payload.head_commit.id
 
+    result = {
+        "status": "ok",
+        "steps": {
+            "syntax": {"status": "pending", "description": "Not started"},
+            "tests": {"status": "pending", "description": "Not started"}
+        }
+    }
+
     try:
-        # Set overall build status to pending
-        update_commit_status(commit_sha, "pending", "CI process started", "CI/overall")
-        
         # Run syntax check
         print("Running syntax check...")
-        update_commit_status(commit_sha, "pending", "Running syntax check", "CI/syntax")
-        if not check_syntax(repo_path):
-            update_commit_status(commit_sha, "failure", "Syntax check failed", "CI/syntax")
-            update_commit_status(commit_sha, "failure", "Build failed at syntax check", "CI/overall")
-            delete_repo(repo_dir_name)
-            return {"status": "syntax error"}
-        update_commit_status(commit_sha, "success", "Syntax check passed", "CI/syntax")
+        update_commit_status(commit_sha, "pending", "Running syntax check", "Syntax Check")
         
-        # Run tests
+        syntax_passed = check_syntax(repo_path)
+        if syntax_passed:
+            update_commit_status(commit_sha, "success", "Syntax check passed", "Syntax Check")
+            result["steps"]["syntax"] = {"status": "success", "description": "Syntax check passed"}
+        else:
+            update_commit_status(commit_sha, "failure", "Syntax check failed", "Syntax Check")
+            result["steps"]["syntax"] = {"status": "failure", "description": "Syntax check failed"}
+        
+        # Run tests regardless of syntax check result
         print("Running tests...")
-        update_commit_status(commit_sha, "pending", "Running unit tests", "CI/tests")
-        try:
-            # Change to repo directory and run tests
-            os.chdir(repo_path)
-            result = subprocess.run(['pytest'], capture_output=True, text=True)
-            os.chdir('../../..')  # Return to original directory
-            
-            if result.returncode == 0:
-                update_commit_status(commit_sha, "success", "All tests passed", "CI/tests")
-                update_commit_status(commit_sha, "success", "All checks passed successfully", "CI/overall")
-            else:
-                update_commit_status(commit_sha, "failure", "Tests failed", "CI/tests")
-                update_commit_status(commit_sha, "failure", "Build failed at test stage", "CI/overall")
-                
-        except Exception as e:
-            update_commit_status(commit_sha, "failure", f"Error running tests: {str(e)}", "CI/tests")
-            update_commit_status(commit_sha, "failure", "Build failed at test stage", "CI/overall")
+        update_commit_status(commit_sha, "pending", "Running unit tests", "Tests")
+        
+        test_results = run_tests(repo_path)
+        
+        if test_results["success"]:
+            update_commit_status(commit_sha, "success", "All tests passed", "Tests")
+            result["steps"]["tests"] = {"status": "success", "description": "All tests passed"}
+        else:
+            update_commit_status(commit_sha, "failure", "Tests failed", "Tests")
+            result["steps"]["tests"] = {
+                "status": "failure", 
+                "description": "Tests failed",
+                "output": test_results["output"],
+                "error": test_results["error"]
+            }
             
     except Exception as e:
+        error_msg = f"CI process error: {str(e)}"
         try:
-            update_commit_status(commit_sha, "error", f"CI process error: {str(e)}", "CI/overall")
+            update_commit_status(commit_sha, "error", "Check failed due to error", "Syntax Check")
+            update_commit_status(commit_sha, "error", "Check failed due to error", "Tests")
+            result["steps"]["syntax"] = {"status": "error", "description": "Check failed due to error"}
+            result["steps"]["tests"] = {"status": "error", "description": "Check failed due to error"}
         except:
             pass  # If we can't even update the status, just continue to cleanup
     
     # Clean up the cloned repository
     delete_repo(repo_dir_name)
     
-    # Return a success response
-    return {"status": "ok"}
+    return result
