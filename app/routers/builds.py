@@ -129,7 +129,8 @@ async def get_build(build_id: str):
     build = build[0]
     commit_hash = build[1]
     date = build[2]
-    build_log = build[3]
+    test_result = build[3]
+    lint_result = build[4]
     
     html_content = f"""
     <html>
@@ -164,8 +165,11 @@ async def get_build(build_id: str):
                 <p><strong>Commit Hash:</strong> {commit_hash}</p>
                 <p><strong>Build Date:</strong> {date}</p>
                 <h2>Build Log:</h2>
-                <div class="build-log">
-                    {build_log}
+                <div class="Test-log">
+                    {test_result}
+                </div>
+                <div class="Linter-log">
+                    {lint_result}
                 </div>
             </div>
         </body>
