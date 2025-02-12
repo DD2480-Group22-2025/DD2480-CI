@@ -25,23 +25,23 @@ class TestClone(unittest.TestCase):
     
     def test_clone_not_github(self):
         # check if the function clone_repo identifies a not real github repo
-        self.assertFalse(clone_repo("https://gitfake.com/fake/url", 123))
+        self.assertFalse(clone_repo("https://gitfake.com/fake/url", 123, "main"))
 
     def test_clone_no_url(self):
         # check if the function clone_repo identifies a not real github repo
-        self.assertFalse(clone_repo("https://github.com/5fake/0error-test", 124))
+        self.assertFalse(clone_repo("https://github.com/5fake/0error-test", 124, "main"))
 
     def test_clone(self):
         # check if the function clone_repo is working correctly
-        self.assertTrue(clone_repo("https://github.com/rtyley/small-test-repo", 234))
+        self.assertTrue(clone_repo("https://github.com/rtyley/small-test-repo", 234, "main"))
 
     def test_clone_2(self):
         # the function clones the same repo but with a different id so it works
-        self.assertTrue(clone_repo("https://github.com/rtyley/small-test-repo", 232))
+        self.assertTrue(clone_repo("https://github.com/rtyley/small-test-repo", 232, "main"))
 
     def test_same_name(self):
         # check if the function clone_repo is working correctly
-        self.assertRaises(Exception, clone_repo("https://github.com/rtyley/small-test-repo", 232))
+        self.assertRaises(Exception, clone_repo("https://github.com/rtyley/small-test-repo", 232, "main"))
 
 class TestDelete(unittest.TestCase):
 
