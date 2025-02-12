@@ -21,32 +21,33 @@ def check_syntax(repo):
         print("Syntax check failed. There is a syntax error.")
         return False
 
-def clone_repo(repo_url, identifier, branch):
-    # Clone the repo into a directory named "cloned_repo/<repo_name>-<identifier>"
-    # Validate URL
+def clone_repo(repo_url, id, branch):
+
+    # clone the given repo
+    
+    # check if the repo url is valid
     if "https://github.com" not in repo_url:
         print("Invalid GitHub repo URL")
         return False
-    clone_dir = f"./cloned_repo/{repo_url.split('/')[-1].split('.')[0]}-{identifier}"
-    # Remove previous clone if it exists
-    if os.path.exists(clone_dir):
-        try:
-            shutil.rmtree(clone_dir)
-            print("Removed previous clone directory.")
-            time.sleep(2)
-        except Exception as e:
-            print("Error removing cloned repo:", e)
-            return False
+
+    # extract the repo name
+    repo_name = repo_url.split("/")[-1].split(".")[0] + "-" + str(id)
+
     try:
-        subprocess.run(["git", "clone", repo_url, clone_dir], check=True)
+        subprocess.run(["git", "clone", f"{repo_url}", f"./cloned_repo/{repo_name}"])
+        subprocess.run(["git", "checkout", f"{branch}"], cwd=f"./cloned_repo/{repo_name}")
+        subprocess.run(["git", "pull"], cwd=f"./cloned_repo/{repo_name}")
+
     except Exception as e:
-        print("Error cloning the repo:", e)
+        print(f"Error in cloning {repo_name} ", e)
         return False
-    if os.path.exists(clone_dir) and len(os.listdir(clone_dir)) > 0:
-        print(f"GitHub repo cloned successfully to {clone_dir}")
+    
+    if os.path.exists(f"./cloned_repo/{repo_name}") and len(os.listdir(f"./cloned_repo/{repo_name}")) > 0:
+        print(f"GitHub repo cloned successfully to ./cloned_repo/{repo_name}")
+
         return True
     else:
-        print("Repo cloning failed.")
+        print(f"Cloning {repo_name} failed")
         return False
 
 def update_commit_status(commit_sha: str, state: str, description: str, context: str = "CI Notification") -> dict:
@@ -84,16 +85,25 @@ def update_commit_status(commit_sha: str, state: str, description: str, context:
         return status.raw_data
     except Exception as e:
         raise Exception(f"Error updating commit status: {str(e)}")
-
+        
 def delete_repo(repo_name):
-    """
-    Delete the cloned repository directory.
-    Assumes the clone is in "./cloned_repo/<repo_name>"
-    """
-    clone_path = f"./cloned_repo/{repo_name}"
-    if os.path.exists(clone_path):
+    # delete the cloned repo
+    repo_path = os.path.join("./cloned_repo", repo_name)
+    if os.path.exists(repo_path):
         try:
-            shutil.rmtree(clone_path)
-            print(f"Deleted cloned repo directory: {clone_path}")
+            for root, dirs, files in os.walk(repo_path):
+                for directory in files:
+                    os.chmod(os.path.join(root, directory), stat.S_IRWXU)
+                for name in dirs:
+                    os.chmod(os.path.join(root, name), stat.S_IRWXU)
+            os.chmod(root, stat.S_IRWXU)
+            shutil.rmtree(repo_path, ignore_errors=False)
+            print(f"{repo_name} was deleted successfully!")
+            
+            return True
         except Exception as e:
-            print("Error deleting repo:", e)
+            print(f"Error in removing {repo_name}: ", e)
+            return False
+    else:
+        print(f"{repo_name} does not exist")
+        return False
