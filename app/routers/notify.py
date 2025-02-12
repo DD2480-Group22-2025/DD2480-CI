@@ -17,13 +17,14 @@ async def notify(payload: dict):
 
     repo_url = payload["repository"]["clone_url"]
     id = payload["repository"]["pushed_at"]
-    # TODO: get branch from payload
+    branch = payload["ref"].split("/")[-1]
 
-    print(f"Push event to {repo_url}")
+    print(f"Push event to {repo_url} on branch {branch}")
 
     print("Attempting to clone repo...")
 
-    if clone_repo(repo_url, id):
+    if clone_repo(repo_url, id, branch):
+
         print("Repo cloned successfully!")
         repo_name = repo_url.split("/")[-1].split(".")[0] + "-" + str(id)
 
