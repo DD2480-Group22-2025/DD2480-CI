@@ -150,8 +150,8 @@ def update_commit_status(commit_sha: str, state: str, description: str, context:
         
         # Create the new status
         status = commit.create_status(
-            state=state,           
-            target_url="",  
+            state=state,
+            target_url="",
             description=description,
             context=context
         )
