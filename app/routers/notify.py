@@ -227,6 +227,7 @@ async def notify(payload: WebhookPayload):
         try:
             build_id = create_new_entry(
                 commit_hash=commit_sha,
+                branch=branch,
                 test_syntax_result=test_results["test_syntax"]["status"],
                 test_notifier_result=test_results["test_notifier"]["status"],
                 test_CI_result=test_results["test_CI"]["status"],

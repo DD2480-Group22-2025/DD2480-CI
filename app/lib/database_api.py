@@ -23,6 +23,7 @@ class BuildLog(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     commit_hash = Column(String, unique=True, nullable=False)
+    branch = Column(String, nullable=False)
     build_date = Column(String, nullable=False)
     test_syntax_result = Column(String, nullable=False)
     test_notifier_result = Column(String, nullable=False)
@@ -68,7 +69,7 @@ def get_entries_by_date(build_date: str):
     entries = db.query(BuildLog).filter(BuildLog.build_date == build_date).all()
     return [(entry.id, entry.commit_hash, entry.build_date, entry.test_syntax_result, entry.test_notifier_result, entry.test_CI_result, entry.test_syntax_log, entry.test_notifier_log, entry.test_CI_log) for entry in entries]
 
-def create_new_entry(commit_hash: str, test_syntax_result: str, test_notifier_result: str, test_CI_result: str,
+def create_new_entry(commit_hash: str, branch: str, test_syntax_result: str, test_notifier_result: str, test_CI_result: str,
                     test_syntax_log: str, test_notifier_log: str, test_CI_log: str):
     """Create a new entry with a given commit hashsum and build logs"""
     db = get_db()
@@ -80,6 +81,7 @@ def create_new_entry(commit_hash: str, test_syntax_result: str, test_notifier_re
     
     new_entry = BuildLog(
         commit_hash=commit_hash,
+        branch=branch,
         build_date=build_date,
         test_syntax_result=test_syntax_result,
         test_notifier_result=test_notifier_result,

@@ -79,6 +79,14 @@ async def get_builds():
                 .build-item a:hover {
                     text-decoration: underline;
                 }
+                .branch-tag {
+                    display: inline-block;
+                    background-color: #e1e4e8;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-size: 0.9em;
+                    margin-left: 8px;
+                }
             </style>
         </head>
         <body>
@@ -89,12 +97,14 @@ async def get_builds():
     for build in builds:
         build_id = build[0]
         commit_hash = build[1]
-        date = build[2]
+        branch = build[2]
+        date = build[3]
         html_content += f"""
                 <li class="build-item">
                     <a href="/builds/{build_id}">
                         Build #{build_id} - Commit: {commit_hash} - Date: {date}
                     </a>
+                    <span class="branch-tag">{branch}</span>
                 </li>
         """
     
@@ -128,13 +138,14 @@ async def get_build(build_id: str):
     
     build = build[0]
     commit_hash = build[1]
-    date = build[2]
-    test_syntax_result = build[3]
-    test_notifier_result = build[4]
-    test_CI_result = build[5]
-    test_syntax_log = build[6]
-    test_notifier_log = build[7]
-    test_CI_log = build[8]
+    branch = build[2]
+    date = build[3]
+    test_syntax_result = build[4]
+    test_notifier_result = build[5]
+    test_CI_result = build[6]
+    test_syntax_log = build[7]
+    test_notifier_log = build[8]
+    test_CI_log = build[9]
     
     html_content = f"""
     <html>
@@ -150,6 +161,14 @@ async def get_build(build_id: str):
                     padding: 20px;
                     border-radius: 5px;
                     margin-bottom: 20px;
+                }}
+                .branch-tag {{
+                    display: inline-block;
+                    background-color: #e1e4e8;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-size: 0.9em;
+                    margin-left: 8px;
                 }}
                 .test-section {{
                     margin-top: 20px;
@@ -187,7 +206,10 @@ async def get_build(build_id: str):
             </div>
             <div class="build-details">
                 <h1>Build #{build_id}</h1>
-                <p><strong>Commit Hash:</strong> {commit_hash}</p>
+                <p>
+                    <strong>Commit Hash:</strong> {commit_hash}
+                    <span class="branch-tag">{branch}</span>
+                </p>
                 <p><strong>Build Date:</strong> {date}</p>
             </div>
             
