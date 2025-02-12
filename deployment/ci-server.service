@@ -1,0 +1,15 @@
+[Unit]
+Description=FastAPI CI Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/%u/github/DD2480-CI
+Environment=PORT=8022
+Environment=HOST=0.0.0.0
+ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host ${HOST} --port ${PORT}
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target 

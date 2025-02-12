@@ -1,0 +1,7 @@
+version: "2"
+web_addr: localhost:4022
+tunnels:
+  group22-ci:
+    proto: http
+    addr: 8022
+    inspect: true

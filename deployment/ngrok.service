@@ -1,0 +1,12 @@
+[Unit]
+Description=Ngrok Tunnel
+After=ci-server.service
+
+[Service]
+Environment=NGROK_CONFIG_PATH=/home/%u/.config/ngrok/ngrok.yml
+ExecStart=/home/%u/bin/ngrok http --config ${NGROK_CONFIG_PATH} 8022
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
