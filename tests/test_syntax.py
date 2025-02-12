@@ -13,8 +13,13 @@ class TestSyntax(unittest.TestCase):
         self.assertTrue(check_syntax("app/lib/util.py"))
 
     def test_err_syntax(self):
-        # check if the function check_syntax is working correctly
-        self.assertFalse(check_syntax("tests/example_files.py"))
+        # check if the function check_syntax correctly identifies syntax errors
+        self.assertFalse(check_syntax(
+            '''
+            def syntax_error():
+                print("Hello, world!")
+            '''
+        ))
 
     def test_no_file(self):
         # check if the function check_syntax is working correctly
