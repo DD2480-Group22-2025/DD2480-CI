@@ -27,9 +27,9 @@ def check_syntax(repo):
         print("Syntax check failed. There is a syntax error.")
         return False
     
-def clone_repo(repo_url, id):
+def clone_repo(repo_url, id, branch):
+
     # clone the given repo
-    # eventually need to checkout the given branch
     
     # check if the repo url is valid
     if "https://github.com" not in repo_url:
@@ -41,7 +41,9 @@ def clone_repo(repo_url, id):
 
     try:
         subprocess.run(["git", "clone", f"{repo_url}", f"./cloned_repo/{repo_name}"])
-    
+        subprocess.run(["git", "checkout", f"{branch}"], cwd=f"./cloned_repo/{repo_name}")
+        subprocess.run(["git", "pull"], cwd=f"./cloned_repo/{repo_name}")
+
     except Exception as e:
         print(f"Error in cloning {repo_name} ", e)
         return False
