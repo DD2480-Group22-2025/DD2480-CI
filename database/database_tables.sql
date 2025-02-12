@@ -1,5 +1,6 @@
 CREATE TABLE build_log(
-    COMMIT_HASH TEXT UNIQUE NOT NULL,
-    BUILD_DATE TEXT NOT NULL,
-    BUILD_LOG TEXT NOT NULL
+    commit_hash     TEXT UNIQUE   NOT NULL,
+    build_date      TEXT          NOT NULL,
+    linter_result   TEXT          NOT NULL,
+    test_result     TEXT          NOT NULL
 );
