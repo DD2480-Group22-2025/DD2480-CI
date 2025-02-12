@@ -6,6 +6,10 @@ import time
 from github import Github  # PyGithub library
 
 def check_syntax(repo):
+    """
+    Check the syntax of the code using pylint.
+    Returns True if no syntax errors, otherwise False.
+    """
     if not os.path.exists(repo):
         print("File does not exist")
         return False
@@ -14,96 +18,67 @@ def check_syntax(repo):
     except Exception as e:
         print("Error in syntax check:", e)
         return False
-    if "syntax-error" not in syntax.stdout:
-        print("Syntax check passed with no errors.")
-        return True
-    else:
-        print("Syntax check failed. There is a syntax error.")
-        return False
+    return "syntax-error" not in syntax.stdout
 
-def clone_repo(repo_url, id, branch):
-
-    # clone the given repo
-    
-    # check if the repo url is valid
+def clone_repo(repo_url, identifier, branch):
+    """
+    Clone the given repo from GitHub.
+    Returns True if cloning is successful, otherwise False.
+    """
     if "https://github.com" not in repo_url:
         print("Invalid GitHub repo URL")
         return False
 
-    # extract the repo name
-    repo_name = repo_url.split("/")[-1].split(".")[0] + "-" + str(id)
+    repo_name = repo_url.split("/")[-1].split(".")[0] + "-" + str(identifier)
+    clone_dir = f"./cloned_repo/{repo_name}"
+
+    if os.path.exists(clone_dir):
+        shutil.rmtree(clone_dir)
+        time.sleep(1)
 
     try:
-        subprocess.run(["git", "clone", f"{repo_url}", f"./cloned_repo/{repo_name}"])
-        subprocess.run(["git", "checkout", f"{branch}"], cwd=f"./cloned_repo/{repo_name}")
-        subprocess.run(["git", "pull"], cwd=f"./cloned_repo/{repo_name}")
-
+        subprocess.run(["git", "clone", repo_url, clone_dir], check=True)
+        subprocess.run(["git", "checkout", branch], cwd=clone_dir, check=True)
+        subprocess.run(["git", "pull"], cwd=clone_dir, check=True)
     except Exception as e:
         print(f"Error in cloning {repo_name} ", e)
         return False
-    
-    if os.path.exists(f"./cloned_repo/{repo_name}") and len(os.listdir(f"./cloned_repo/{repo_name}")) > 0:
-        print(f"GitHub repo cloned successfully to ./cloned_repo/{repo_name}")
 
-        return True
-    else:
-        print(f"Cloning {repo_name} failed")
-        return False
+    return os.path.exists(clone_dir) and len(os.listdir(clone_dir)) > 0
 
 def update_commit_status(commit_sha: str, state: str, description: str, context: str = "CI Notification") -> dict:
     """
     Update the commit status on GitHub using PyGithub.
-    
-    Requires:
-      - CI_SERVER_AUTH_TOKEN
-      - REPO_OWNER
-      - REPO_NAME
-      
-    Returns GitHub API's raw response data.
     """
     token = os.getenv("CI_SERVER_AUTH_TOKEN")
     repo_owner = os.getenv("REPO_OWNER")
     repo_name = os.getenv("REPO_NAME")
-    
+
     if not token or not repo_owner or not repo_name:
         raise Exception("Missing GitHub configuration. Please check the environment variables.")
-    
+
     g = Github(token)
     try:
         repo = g.get_repo(f"{repo_owner}/{repo_name}")
     except Exception as e:
         raise Exception(f"Error accessing repository: {str(e)}")
-    
-    try:
-        commit = repo.get_commit(commit_sha)
-        status = commit.create_status(
-            state=state,           # "pending", "success", or "failure"
-            target_url="",         # Optionally add a URL for build logs
-            description=description,
-            context=context
-        )
-        return status.raw_data
-    except Exception as e:
-        raise Exception(f"Error updating commit status: {str(e)}")
-        
+
+    commit = repo.get_commit(commit_sha)
+    status = commit.create_status(
+        state=state,  # "pending", "success", or "failure"
+        target_url="",  # Optionally add a URL for build logs
+        description=description,
+        context=context
+    )
+    return status.raw_data
+
 def delete_repo(repo_name):
-    # delete the cloned repo
+    """
+    Delete the cloned repository directory.
+    """
     repo_path = os.path.join("./cloned_repo", repo_name)
     if os.path.exists(repo_path):
-        try:
-            for root, dirs, files in os.walk(repo_path):
-                for directory in files:
-                    os.chmod(os.path.join(root, directory), stat.S_IRWXU)
-                for name in dirs:
-                    os.chmod(os.path.join(root, name), stat.S_IRWXU)
-            os.chmod(root, stat.S_IRWXU)
-            shutil.rmtree(repo_path, ignore_errors=False)
-            print(f"{repo_name} was deleted successfully!")
-            
-            return True
-        except Exception as e:
-            print(f"Error in removing {repo_name}: ", e)
-            return False
-    else:
-        print(f"{repo_name} does not exist")
-        return False
+        shutil.rmtree(repo_path)
+        print(f"Deleted cloned repo: {repo_name}")
+        return True
+    return False
