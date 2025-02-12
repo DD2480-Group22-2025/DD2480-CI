@@ -14,6 +14,7 @@ There are notifications for the CI results. The commit status is set for the rep
 [ Carl ]
 - CI feature: database and history of past builds
 - writing the report and "way of working"
+- update README 
 
 [ Jacob ]
 - core CI feature for #2 testing
@@ -30,6 +31,7 @@ There are notifications for the CI results. The commit status is set for the rep
 [ Samuel ]
 - setup server
 - testing for the CI testing feature
+- database handling and testing
 
 ## Way of working 
 Referring to Table 8.6 in the Essence standard v1.2, our team is currently in the [ Formed ] state, progressing towards the [ Collaborating ] state. Individual responsibilities are understood, and each team member is doing it's best to finish their task in the best way possible according to their individual competencies. Furthermore, every team member understands their role in the group and how to perform their work. If any team member experiences problems with their assignments, the member asks the others in the group for help. The work is being conducted both during individual sessions and group meetings with Discord as the primary platform for communication.
