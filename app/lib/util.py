@@ -10,15 +10,29 @@ def check_syntax(repo):
         print("File does not exist")
         return False
     try:
-        syntax = subprocess.run(["pylint", f"{repo}", "--errors-only"], capture_output=True, text=True)
-    except Exception as e:
-        print("Error in syntax check:", e)
-        return False
-    if "syntax-error" not in syntax.stdout:
+        # Find all Python files in the repository
+        python_files = []
+        for root, _, files in os.walk(repo):
+            for file in files:
+                if file.endswith('.py'):
+                    python_files.append(os.path.join(root, file))
+        
+        if not python_files:
+            print("No Python files found to check")
+            return True
+            
+        # Check each Python file
+        for py_file in python_files:
+            syntax = subprocess.run(["pylint", py_file, "--errors-only"], capture_output=True, text=True)
+            if "syntax-error" in syntax.stdout:
+                print(f"Syntax error found in {py_file}")
+                return False
+        
         print("Syntax check passed with no errors.")
         return True
-    else:
-        print("Syntax check failed. There is a syntax error.")
+        
+    except Exception as e:
+        print("Error in syntax check:", e)
         return False
 
 def clone_repo(repo_url, id, branch):

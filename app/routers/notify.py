@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Request, HTTPException
 import os
 import sys
+import subprocess
 sys.path.append('app/lib')
 from util import check_syntax, clone_repo, update_commit_status, delete_repo
-from typing import Any
+from typing import Any, Optional
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -12,23 +13,34 @@ load_dotenv()
 
 router = APIRouter()
 
+class Repository(BaseModel):
+    clone_url: str
+    full_name: str
+    pushed_at: str
+
+class HeadCommit(BaseModel):
+    id: str
+
 class WebhookPayload(BaseModel):
-    data: Any
+    ref: str
+    repository: Repository
+    head_commit: HeadCommit
 
 @router.post("/webhook")
-async def notify(request: Request):
+async def notify(payload: WebhookPayload):
     try:
-        payload = await request.json()
+        # Extract repository info and branch
+        repo_url = payload.repository.clone_url
+        identifier = payload.repository.pushed_at
+        branch = payload.ref.split("/")[-1]
+        
+        # Extract and set repo owner and name from the payload
+        owner, name = payload.repository.full_name.split("/")
+        os.environ["REPO_OWNER"] = owner
+        os.environ["REPO_NAME"] = name
+        
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {str(e)}")
-    
-    # Extract repository info and branch
-    try:
-        repo_url = payload["repository"]["clone_url"]
-        identifier = payload["repository"].get("pushed_at", "default_id")
-        branch = payload["ref"].split("/")[-1]
-    except KeyError as e:
-        raise HTTPException(status_code=400, detail=f"Missing required field: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error processing payload: {str(e)}")
     
     print(f"Push event to {repo_url} on branch {branch}")
     print("Attempting to clone repo...")
@@ -41,31 +53,53 @@ async def notify(request: Request):
     
     # Construct the cloned repo directory name
     repo_dir_name = repo_url.split("/")[-1].split(".")[0] + "-" + str(identifier)
+    repo_path = f"./cloned_repo/{repo_dir_name}"
     
-    # Run syntax check on the cloned repository
-    if not check_syntax(f"./cloned_repo/{repo_dir_name}"):
-        delete_repo(repo_dir_name)
-        return {"status": "syntax error"}
-    
-    # For testing, assume tests pass; set build state and description
-    build_state = "success"
-    build_description = "Build passed"
-    
-    # Extract the commit SHA from the payload; try "commit" then "head_commit.id"
-    commit_sha = payload.get("commit") or payload.get("head_commit", {}).get("id")
-    if not commit_sha:
-        delete_repo(repo_dir_name)
-        raise HTTPException(status_code=400, detail="Payload must include commit SHA (commit or head_commit.id).")
-    
+    # Get the commit SHA from the payload
+    commit_sha = payload.head_commit.id
+
     try:
-        # Update the commit status on GitHub using the utility function
-        notification_result = update_commit_status(commit_sha, build_state, build_description)
+        # Set overall build status to pending
+        update_commit_status(commit_sha, "pending", "CI process started", "CI/overall")
+        
+        # Run syntax check
+        print("Running syntax check...")
+        update_commit_status(commit_sha, "pending", "Running syntax check", "CI/syntax")
+        if not check_syntax(repo_path):
+            update_commit_status(commit_sha, "failure", "Syntax check failed", "CI/syntax")
+            update_commit_status(commit_sha, "failure", "Build failed at syntax check", "CI/overall")
+            delete_repo(repo_dir_name)
+            return {"status": "syntax error"}
+        update_commit_status(commit_sha, "success", "Syntax check passed", "CI/syntax")
+        
+        # Run tests
+        print("Running tests...")
+        update_commit_status(commit_sha, "pending", "Running unit tests", "CI/tests")
+        try:
+            # Change to repo directory and run tests
+            os.chdir(repo_path)
+            result = subprocess.run(['pytest'], capture_output=True, text=True)
+            os.chdir('../../..')  # Return to original directory
+            
+            if result.returncode == 0:
+                update_commit_status(commit_sha, "success", "All tests passed", "CI/tests")
+                update_commit_status(commit_sha, "success", "All checks passed successfully", "CI/overall")
+            else:
+                update_commit_status(commit_sha, "failure", "Tests failed", "CI/tests")
+                update_commit_status(commit_sha, "failure", "Build failed at test stage", "CI/overall")
+                
+        except Exception as e:
+            update_commit_status(commit_sha, "failure", f"Error running tests: {str(e)}", "CI/tests")
+            update_commit_status(commit_sha, "failure", "Build failed at test stage", "CI/overall")
+            
     except Exception as e:
-        delete_repo(repo_dir_name)
-        raise HTTPException(status_code=500, detail=f"Error updating commit status: {str(e)}")
+        try:
+            update_commit_status(commit_sha, "error", f"CI process error: {str(e)}", "CI/overall")
+        except:
+            pass  # If we can't even update the status, just continue to cleanup
     
     # Clean up the cloned repository
     delete_repo(repo_dir_name)
     
-    # Return a success response with the notification result
-    return {"status": "ok", "notification": notification_result}
+    # Return a success response
+    return {"status": "ok"}
