@@ -57,7 +57,7 @@ The CI server will be available at:
 fastapi dev app/main.py
 ```
 
-**Project structure**
+## Project structure
 
 ```
 DD2480-CI/
