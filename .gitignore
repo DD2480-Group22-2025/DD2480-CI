@@ -4,8 +4,14 @@
 # Log file
 *.log
 
+# Pid files
+*.pid
+
 # BlueJ files
 *.ctxt
+
+# Database
+*.db
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
@@ -19,6 +25,9 @@
 *.tar.gz
 *.rar
 
+# Coverage directory
+.coverage
+
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
@@ -27,6 +36,12 @@ replay_pid*
 .env
 
 # venv
-.venv/*
+.venv
+venv
 
 __pycache__
+
+.DS_Store
+.pytest_cache
+
+cloned_repo
