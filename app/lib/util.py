@@ -3,7 +3,7 @@ import subprocess
 import shutil
 import stat
 import time
-from github import Github  # PyGithub library
+from github import Github, Auth 
 from typing import Dict, Any
 def run_tests(repo_path: str) -> Dict[str, Any]:
     """
@@ -57,7 +57,10 @@ def check_syntax(repo):
         # Check all Python files in a single pylint call
         syntax = subprocess.run(["pylint"] + python_files + ["--errors-only"], 
                               capture_output=True, text=True)
-        if "syntax-error" in syntax.stdout:
+        
+        # Check both stdout and stderr for syntax errors
+        output = syntax.stdout + syntax.stderr
+        if "syntax-error" in output.lower():
             print("Syntax errors found")
             return False
         
@@ -116,8 +119,9 @@ def update_commit_status(commit_sha: str, state: str, description: str, context:
         raise Exception("Missing GitHub configuration. Please check the environment variables.")
 
     try:
-        # Create Github instance with timeout
-        g = Github(token, timeout=10)
+        # Create Github instance with new auth method and timeout
+        auth = Auth.Token(token)
+        g = Github(auth=auth, timeout=10)
         
         # Get repository with timeout
         repo = g.get_repo(f"{repo_owner}/{repo_name}")

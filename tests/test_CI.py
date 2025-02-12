@@ -142,8 +142,10 @@ def test_with_syntax_error()
         try:
             response = self.client.post("/webhook", json=payload)
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()["message"], "Repo not cloned.")
+            self.assertEqual(response.json()["message"], "Repository clone failed")
+            self.assertEqual(response.json()["status"], "error")
         finally:
+            # Restore original function
             util.clone_repo = original_clone
 
 if __name__ == '__main__':

@@ -14,18 +14,21 @@ load_dotenv()
 
 router = APIRouter()
 
-class Repository(BaseModel):
-    clone_url: str
-    full_name: str
-    pushed_at: str
-
-class HeadCommit(BaseModel):
-    id: str
-
 class WebhookPayload(BaseModel):
     ref: str
-    repository: Repository
-    head_commit: HeadCommit
+    repository: Dict[str, Any]
+    head_commit: Dict[str, Any]
+    before: str | None = None
+    after: str | None = None
+    created: bool | None = None
+    deleted: bool | None = None
+    forced: bool | None = None
+    base_ref: str | None = None
+    compare: str | None = None
+    commits: list[Dict[str, Any]] | None = None
+    pusher: Dict[str, Any] | None = None
+    sender: Dict[str, Any] | None = None
+    organization: Dict[str, Any] | None = None
 
 def run_test_file(repo_path: str, test_file: str) -> Dict[str, Any]:
     """Run a specific test file and return the results"""
@@ -35,7 +38,11 @@ def run_test_file(repo_path: str, test_file: str) -> Dict[str, Any]:
         test_path = os.path.join("tests", test_filename)
         abs_test_path = os.path.join(repo_path, test_path)
         
+        print(f"\nDEBUG: Testing file {test_file}")
+        print(f"DEBUG: Absolute test path: {abs_test_path}")
+        
         if not os.path.exists(abs_test_path):
+            print(f"DEBUG: Test file not found at {abs_test_path}")
             return {
                 "success": False,
                 "output": "",
@@ -44,16 +51,20 @@ def run_test_file(repo_path: str, test_file: str) -> Dict[str, Any]:
 
         # First verify pytest is available in the environment
         try:
-            subprocess.run(['python3', '-m', 'pytest', '--version'], 
+            pytest_version = subprocess.run(['python3', '-m', 'pytest', '--version'], 
                          capture_output=True, 
+                         text=True,
                          check=True)
+            print(f"DEBUG: pytest version: {pytest_version.stdout}")
         except subprocess.CalledProcessError:
+            print("DEBUG: pytest is not available in the environment")
             return {
                 "success": False,
                 "output": "",
                 "error": "pytest is not available in the environment"
             }
 
+        print(f"DEBUG: Running pytest from directory: {repo_path}")
         # Run the test from the repo root to ensure proper import paths
         result = subprocess.run(
             ['python3', '-m', 'pytest', test_path, '-v'],
@@ -62,6 +73,10 @@ def run_test_file(repo_path: str, test_file: str) -> Dict[str, Any]:
             text=True,
             timeout=30
         )
+        
+        print(f"DEBUG: Test return code: {result.returncode}")
+        print(f"DEBUG: Test stdout: {result.stdout}")
+        print(f"DEBUG: Test stderr: {result.stderr}")
         
         # Check if the test actually ran or if it was collected but not run
         if "no tests ran" in result.stdout.lower():
@@ -94,12 +109,14 @@ def run_test_file(repo_path: str, test_file: str) -> Dict[str, Any]:
             "error": result.stderr
         }
     except subprocess.TimeoutExpired:
+        print("DEBUG: Test execution timed out after 30 seconds")
         return {
             "success": False,
             "output": "",
             "error": "Test execution timed out after 30 seconds"
         }
     except Exception as e:
+        print(f"DEBUG: Unexpected error running tests: {str(e)}")
         return {
             "success": False,
             "output": "",
@@ -119,17 +136,17 @@ def ensure_clean_clone_dir(repo_dir_name: str) -> None:
 async def notify(payload: WebhookPayload):
     repo_dir_name = None
     try:
-        repo_url = payload.repository.clone_url
-        identifier = payload.repository.pushed_at
-        branch = payload.ref.split("/")[-1]
-        owner, name = payload.repository.full_name.split("/")
+        repo_url = payload.repository["clone_url"]
+        identifier = payload.repository["pushed_at"]
+        branch = payload.ref.replace("refs/heads/", "")
+        owner, name = payload.repository["full_name"].split("/")
         os.environ["REPO_OWNER"] = owner
         os.environ["REPO_NAME"] = name
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error processing payload: {str(e)}")
 
     print(f"Push event to {repo_url} on branch {branch}")
-    commit_sha = payload.head_commit.id
+    commit_sha = payload.head_commit["id"]
 
     test_contexts = ["CI/test_syntax", "CI/test_notifier", "CI/test_CI"]
     # Initial status set to pending
@@ -143,7 +160,7 @@ async def notify(payload: WebhookPayload):
     repo_dir_name = repo_url.split("/")[-1].split(".")[0] + "-" + str(identifier)
     ensure_clean_clone_dir(repo_dir_name)
 
-    print("Attempting to clone repo...")
+    print("Attempting to clone repo... with branch: ", branch)
     clone_success = clone_repo(repo_url, identifier, branch)
     if not clone_success:
         error_msg = "Repository clone failed"
@@ -174,13 +191,17 @@ async def notify(payload: WebhookPayload):
 
     try:
         for test_name, test_file in test_files:
-            print(f"Running {test_name}...")
+            print(f"\n=== Starting {test_name} ===")
             
             try:
                 test_results = run_test_file(repo_path, test_file)
                 status = "success" if test_results["success"] else "failure"
                 description = (f"{test_name} passed" if test_results["success"] 
                              else f"{test_name} failed: {test_results.get('error', '')[:140]}")
+                
+                print(f"DEBUG: {test_name} results:")
+                print(f"DEBUG: Status: {status}")
+                print(f"DEBUG: Description: {description}")
                 
                 update_commit_status(commit_sha, status, description, f"CI/{test_name}")
                 
@@ -192,6 +213,7 @@ async def notify(payload: WebhookPayload):
                 }
             except Exception as e:
                 error_msg = f"Test execution error: {str(e)}"
+                print(f"DEBUG: Error in {test_name}: {error_msg}")
                 update_commit_status(commit_sha, "error", error_msg, f"CI/{test_name}")
                 result["steps"][test_name] = {
                     "status": "error",

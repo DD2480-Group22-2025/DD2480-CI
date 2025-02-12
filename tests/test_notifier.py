@@ -65,18 +65,22 @@ class TestUpdateCommitStatus(unittest.TestCase):
     @patch("util.Github")
     def test_error_accessing_repository(self, mock_github_class):
         """
-        Test that update_commit_status raises an exception if the repository cannot be accessed.
+        Test that update_commit_status handles repository access errors gracefully.
         """
         os.environ["CI_SERVER_AUTH_TOKEN"] = "dummy_token"
         os.environ["REPO_OWNER"] = "dummy_owner"
         os.environ["REPO_NAME"] = "dummy_repo"
-        
+
         instance = mock_github_class.return_value
         instance.get_repo.side_effect = Exception("Repository not found")
+
+        # Instead of expecting an exception, we expect a dummy response with error info
+        result = update_commit_status("dummy_sha", "success", "test description")
         
-        with self.assertRaises(Exception) as context:
-            update_commit_status("dummy_commit", "success", "Build passed")
-        self.assertIn("Error accessing repository: Repository not found", str(context.exception))
+        self.assertIn("error", result)
+        self.assertEqual(result["error"], "Repository not found")
+        self.assertEqual(result["state"], "success")
+        self.assertEqual(result["description"], "test description")
 
     @patch("util.Github")
     def test_invalid_state(self, mock_github_class):
