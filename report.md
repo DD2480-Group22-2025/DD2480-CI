@@ -44,9 +44,10 @@ Testing Guidelines
 - testing for compiling and syntax checking
 
 [ Samuel ]
-- setup server
+- setup server & infrastructure
 - testing for the CI testing feature
-- database handling and testing
+- CI notifications to github
+- build history & navigation
 
 ## Way of working 
 Referring to Table 8.6 in the Essence standard v1.2, our team is currently in the [ Formed ] state, progressing towards the [ Collaborating ] state. Individual responsibilities are understood, and each team member is doing it's best to finish their task in the best way possible according to their individual competencies. Furthermore, every team member understands their role in the group and how to perform their work. If any team member experiences problems with their assignments, the member asks the others in the group for help. The work is being conducted both during individual sessions and group meetings with Discord as the primary platform for communication.
