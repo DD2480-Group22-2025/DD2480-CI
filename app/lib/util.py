@@ -46,22 +46,20 @@ def check_syntax(repo):
         return False
     try:
         # Find all Python files in the repository
-        python_files = []
-        for root, _, files in os.walk(repo):
-            for file in files:
-                if file.endswith('.py'):
-                    python_files.append(os.path.join(root, file))
+        python_files = [os.path.join(root, file) 
+                       for root, _, files in os.walk(repo)
+                       for file in files if file.endswith('.py')]
         
         if not python_files:
             print("No Python files found to check")
             return True
             
-        # Check each Python file
-        for py_file in python_files:
-            syntax = subprocess.run(["pylint", py_file, "--errors-only"], capture_output=True, text=True)
-            if "syntax-error" in syntax.stdout:
-                print(f"Syntax error found in {py_file}")
-                return False
+        # Check all Python files in a single pylint call
+        syntax = subprocess.run(["pylint"] + python_files + ["--errors-only"], 
+                              capture_output=True, text=True)
+        if "syntax-error" in syntax.stdout:
+            print("Syntax errors found")
+            return False
         
         print("Syntax check passed with no errors.")
         return True
@@ -71,32 +69,21 @@ def check_syntax(repo):
         return False
 
 def clone_repo(repo_url, id, branch):
-
-    # clone the given repo
-    
-    # check if the repo url is valid
-    if "https://github.com" not in repo_url:
+    if not repo_url.startswith("https://github.com"):
         print("Invalid GitHub repo URL")
         return False
 
-    # extract the repo name
-    repo_name = repo_url.split("/")[-1].split(".")[0] + "-" + str(id)
+    repo_name = f"{repo_url.split('/')[-1].split('.')[0]}-{id}"
+    repo_path = f"./cloned_repo/{repo_name}"
 
     try:
-        subprocess.run(["git", "clone", f"{repo_url}", f"./cloned_repo/{repo_name}"])
-        subprocess.run(["git", "checkout", f"{branch}"], cwd=f"./cloned_repo/{repo_name}")
-        subprocess.run(["git", "pull"], cwd=f"./cloned_repo/{repo_name}")
-
-    except Exception as e:
-        print(f"Error in cloning {repo_name} ", e)
-        return False
-    
-    if os.path.exists(f"./cloned_repo/{repo_name}") and len(os.listdir(f"./cloned_repo/{repo_name}")) > 0:
-        print(f"GitHub repo cloned successfully to ./cloned_repo/{repo_name}")
-
+        subprocess.run(["git", "clone", repo_url, repo_path], check=True)
+        subprocess.run(["git", "-C", repo_path, "checkout", branch], check=True)
+        subprocess.run(["git", "-C", repo_path, "pull"], check=True)
+        print(f"GitHub repo cloned successfully to {repo_path}")
         return True
-    else:
-        print(f"Cloning {repo_name} failed")
+    except subprocess.CalledProcessError as e:
+        print(f"Error in cloning {repo_name}: {e}")
         return False
 
 def update_commit_status(commit_sha: str, state: str, description: str, context: str = "CI Notification") -> dict:
@@ -128,36 +115,37 @@ def update_commit_status(commit_sha: str, state: str, description: str, context:
     if not token or not repo_owner or not repo_name:
         raise Exception("Missing GitHub configuration. Please check the environment variables.")
 
-    g = Github(token)
     try:
+        # Create Github instance with timeout
+        g = Github(token, timeout=10)
+        
+        # Get repository with timeout
         repo = g.get_repo(f"{repo_owner}/{repo_name}")
-    except Exception as e:
-        raise Exception(f"Error accessing repository: {str(e)}")
-
-    try:
+        
+        # Get commit with timeout
         commit = repo.get_commit(commit_sha)
         
-        # First, try to find and remove any old status with CI/ prefix or default context
-        for status in commit.get_statuses():
-            if status.context.startswith("CI/") or status.context == "CI Notification":
-                # GitHub doesn't allow deleting statuses, so we'll update them to be neutral/skipped
-                commit.create_status(
-                    state="success",
-                    target_url="",
-                    description="Deprecated status check",
-                    context=status.context
-                )
-        
-        # Create the new status
+        # Create the new status directly without cleaning up old ones
         status = commit.create_status(
             state=state,
             target_url="",
             description=description,
             context=context
         )
+        
+        # Close the Github connection
+        g.close()
+        
         return status.raw_data
     except Exception as e:
-        raise Exception(f"Error updating commit status: {str(e)}")
+        print(f"GitHub API Error: {str(e)}")
+        # Return a dummy response to prevent blocking
+        return {
+            "state": state,
+            "description": description,
+            "context": context,
+            "error": str(e)
+        }
     
         
 def delete_repo(repo_name):
