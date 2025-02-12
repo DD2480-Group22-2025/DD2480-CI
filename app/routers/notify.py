@@ -31,6 +31,18 @@ async def notify(request: Request):
         raise HTTPException(status_code=400, detail=f"Missing required field: {str(e)}")
     
     print(f"Push event to {repo_url} on branch {branch}")
+    
+    # Extract the commit SHA
+    commit_sha = payload.get("head_commit", {}).get("id")
+    if not commit_sha:
+        raise HTTPException(status_code=400, detail="Payload must include commit SHA (head_commit.id).")
+
+    # Mark commit as "pending" before starting CI
+    try:
+        update_commit_status(commit_sha, "pending", "CI pipeline started.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating commit status: {str(e)}")
+
     print("Attempting to clone repo...")
     
     # Attempt to clone the repository using repo_url, identifier, and branch
@@ -44,28 +56,18 @@ async def notify(request: Request):
     
     # Run syntax check on the cloned repository
     if not check_syntax(f"./cloned_repo/{repo_dir_name}"):
+        update_commit_status(commit_sha, "failure", "Syntax error")
         delete_repo(repo_dir_name)
         return {"status": "syntax error"}
     
     # For testing, assume tests pass; set build state and description
-    build_state = "success"
-    build_description = "Build passed"
-    
-    # Extract the commit SHA from the payload; try "commit" then "head_commit.id"
-    commit_sha = payload.get("commit") or payload.get("head_commit", {}).get("id")
-    if not commit_sha:
-        delete_repo(repo_dir_name)
-        raise HTTPException(status_code=400, detail="Payload must include commit SHA (commit or head_commit.id).")
-    
-    try:
-        # Update the commit status on GitHub using the utility function
-        notification_result = update_commit_status(commit_sha, build_state, build_description)
+    try: 
+        notification_result = update_commit_status(commit_sha, "success", "Build passed")
     except Exception as e:
         delete_repo(repo_dir_name)
         raise HTTPException(status_code=500, detail=f"Error updating commit status: {str(e)}")
     
-    # Clean up the cloned repository
+    #Clean up repo
     delete_repo(repo_dir_name)
-    
-    # Return a success response with the notification result
+
     return {"status": "ok", "notification": notification_result}
