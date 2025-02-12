@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request
 import uvicorn
 import sys
 sys.path.append('app/lib')
-from util import check_syntax, clone_repo
+from util import check_syntax, clone_repo, delete_repo
 from typing import Any
 from pydantic import BaseModel
 
@@ -16,18 +16,24 @@ class WebhookPayload(BaseModel):
 async def notify(payload: dict):
 
     repo_url = payload["repository"]["clone_url"]
+    id = payload["repository"]["pushed_at"]
     # TODO: get branch from payload
 
-    print(f"push to {repo_url}")
+    print(f"Push event to {repo_url}")
 
-    print("Cloning repo...")
+    print("Attempting to clone repo...")
 
-    if clone_repo(repo_url):
+    if clone_repo(repo_url, id):
         print("Repo cloned successfully!")
-    
-        if check_syntax("./cloned_repo"):
-            # TODO: run tests
-            
-            return {"status": "ok"}    
+        repo_name = repo_url.split("/")[-1].split(".")[0] + "-" + str(id)
 
-    return {"message": "repo not cloned. "}
+        if check_syntax(f"./cloned_repo/{repo_name}"):
+            # TODO: run tests
+            # TODO: send notification
+            return_msg = {"status": "ok"}
+        else:
+            return_msg = {"status": "syntax error"}
+
+        delete_repo(repo_name)
+
+    return return_msg
