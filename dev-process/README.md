@@ -55,7 +55,6 @@
 
    - pytest execution
    - Test result collection
-   - Coverage reporting
    - Test suite for test runner
 
    ```python
@@ -122,32 +121,6 @@ cp .env.example .env
 
 # 5. start services
 ./start_services.sh  # Combines steps below
-```
-
-8. **Project structure**
-
-```
-project/
-├── .env.example              # Template for environment variables
-├── requirements.txt          # Python dependencies
-├── start_services.sh         # Service starter script
-├── src/
-│   ├── main.py              # Main FastAPI application
-│   ├── config.py            # Configuration management
-│   ├── syntax_checker.py    # P1 implementation
-│   ├── test_runner.py       # P2 implementation
-│   ├── notifier.py          # P3 implementation
-│   └── utils/
-│       ├── github_utils.py  # GitHub API helpers
-│       └── logging_utils.py # Logging helpers
-├── tests/
-│   ├── test_syntax.py       # Tests for P1
-│   ├── test_runner.py       # Tests for P2
-│   └── test_notifier.py     # Tests for P3
-└── scripts/
-    ├── deploy.sh            # Deployment script
-    ├── auto_pull.sh         # Auto-update script
-    └── start_ngrok.sh       # ngrok starter script
 ```
 
 **Development Process outline**:
