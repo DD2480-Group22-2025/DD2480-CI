@@ -22,33 +22,35 @@ def check_syntax(repo):
         return False
 
 def clone_repo(repo_url, id, branch):
-
-    # clone the given repo
-    
-    # check if the repo url is valid
+    # Check if the repo URL is valid
     if "https://github.com" not in repo_url:
         print("Invalid GitHub repo URL")
         return False
 
-    # extract the repo name
+    # Extract the repo name
     repo_name = repo_url.split("/")[-1].split(".")[0] + "-" + str(id)
+    repo_path = f"./cloned_repo/{repo_name}"
 
     try:
-        subprocess.run(["git", "clone", f"{repo_url}", f"./cloned_repo/{repo_name}"])
-        subprocess.run(["git", "checkout", f"{branch}"], cwd=f"./cloned_repo/{repo_name}")
-        subprocess.run(["git", "pull"], cwd=f"./cloned_repo/{repo_name}")
+        # Clone the repository
+        subprocess.run(["git", "clone", "--branch", branch, "--single-branch", repo_url, repo_path], check=True)
 
-    except Exception as e:
-        print(f"Error in cloning {repo_name} ", e)
-        return False
-    
-    if os.path.exists(f"./cloned_repo/{repo_name}") and len(os.listdir(f"./cloned_repo/{repo_name}")) > 0:
-        print(f"GitHub repo cloned successfully to ./cloned_repo/{repo_name}")
+        # Ensure the repo was cloned before proceeding
+        if not os.path.exists(repo_path) or len(os.listdir(repo_path)) == 0:
+            print(f"Cloning {repo_name} failed")
+            return False
+        
+        # Ensure we are on the latest commit
+        subprocess.run(["git", "fetch", "--all"], cwd=repo_path, check=True)
+        subprocess.run(["git", "reset", "--hard", f"origin/{branch}"], cwd=repo_path, check=True)
+        subprocess.run(["git", "pull"], cwd=repo_path, check=True)
 
-        return True
-    else:
-        print(f"Cloning {repo_name} failed")
+    except subprocess.CalledProcessError as e:
+        print(f"Error in cloning {repo_name}: {e}")
         return False
+
+    print(f"GitHub repo cloned and updated successfully to {repo_path}")
+    return True
 
 def update_commit_status(commit_sha: str, state: str, description: str, context: str = "CI Notification") -> dict:
     """
