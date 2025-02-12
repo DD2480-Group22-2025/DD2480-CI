@@ -43,6 +43,18 @@ async def notify(payload: WebhookPayload):
         raise HTTPException(status_code=400, detail=f"Error processing payload: {str(e)}")
     
     print(f"Push event to {repo_url} on branch {branch}")
+    
+    # Extract the commit SHA
+    commit_sha = payload.get("head_commit", {}).get("id")
+    if not commit_sha:
+        raise HTTPException(status_code=400, detail="Payload must include commit SHA (head_commit.id).")
+
+    # Mark commit as "pending" before starting CI
+    try:
+        update_commit_status(commit_sha, "pending", "CI pipeline started.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating commit status: {str(e)}")
+
     print("Attempting to clone repo...")
     
     # Attempt to clone the repository using repo_url, identifier, and branch
@@ -98,16 +110,12 @@ async def notify(payload: WebhookPayload):
             }
             
     except Exception as e:
-        error_msg = f"CI process error: {str(e)}"
-        try:
-            update_commit_status(commit_sha, "error", "Check failed due to error", "Syntax Check")
-            update_commit_status(commit_sha, "error", "Check failed due to error", "Tests")
-            result["steps"]["syntax"] = {"status": "error", "description": "Check failed due to error"}
-            result["steps"]["tests"] = {"status": "error", "description": "Check failed due to error"}
-        except:
-            pass  # If we can't even update the status, just continue to cleanup
+        delete_repo(repo_dir_name)
+        raise HTTPException(status_code=500, detail=f"Error updating commit status: {str(e)}")
     
-    # Clean up the cloned repository
+    #Clean up repo
     delete_repo(repo_dir_name)
     
     return result
+
+    return {"status": "ok", "notification": notification_result}

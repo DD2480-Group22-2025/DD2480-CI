@@ -102,27 +102,38 @@ def clone_repo(repo_url, id, branch):
 def update_commit_status(commit_sha: str, state: str, description: str, context: str = "CI Notification") -> dict:
     """
     Update the commit status on GitHub using PyGithub.
-    
+
+    Valid states:
+      - "pending"
+      - "success"
+      - "failure"
+      - "error"
+
     Requires:
       - CI_SERVER_AUTH_TOKEN
       - REPO_OWNER
       - REPO_NAME
-      
+
     Returns GitHub API's raw response data.
     """
+    VALID_STATES = {"pending", "success", "failure", "error"}
+
+    if state not in VALID_STATES:
+        raise ValueError(f"Invalid commit status state: {state}. Must be one of {VALID_STATES}")
+
     token = os.getenv("CI_SERVER_AUTH_TOKEN")
     repo_owner = os.getenv("REPO_OWNER")
     repo_name = os.getenv("REPO_NAME")
-    
+
     if not token or not repo_owner or not repo_name:
         raise Exception("Missing GitHub configuration. Please check the environment variables.")
-    
+
     g = Github(token)
     try:
         repo = g.get_repo(f"{repo_owner}/{repo_name}")
     except Exception as e:
         raise Exception(f"Error accessing repository: {str(e)}")
-    
+
     try:
         commit = repo.get_commit(commit_sha)
         
@@ -139,14 +150,15 @@ def update_commit_status(commit_sha: str, state: str, description: str, context:
         
         # Create the new status
         status = commit.create_status(
-            state=state,
-            target_url="",
+            state=state,           
+            target_url="",  
             description=description,
             context=context
         )
         return status.raw_data
     except Exception as e:
         raise Exception(f"Error updating commit status: {str(e)}")
+    
         
 def delete_repo(repo_name):
     # delete the cloned repo
