@@ -28,6 +28,7 @@ def check_syntax(repo):
         return False
     
 def clone_repo(repo_url, id, branch):
+
     # clone the given repo
     
     # check if the repo url is valid
@@ -42,7 +43,7 @@ def clone_repo(repo_url, id, branch):
         subprocess.run(["git", "clone", f"{repo_url}", f"./cloned_repo/{repo_name}"])
         subprocess.run(["git", "checkout", f"{branch}"], cwd=f"./cloned_repo/{repo_name}")
         subprocess.run(["git", "pull"], cwd=f"./cloned_repo/{repo_name}")
-    
+
     except Exception as e:
         print(f"Error in cloning {repo_name} ", e)
         return False

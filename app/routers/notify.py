@@ -24,6 +24,7 @@ async def notify(payload: dict):
     print("Attempting to clone repo...")
 
     if clone_repo(repo_url, id, branch):
+
         print("Repo cloned successfully!")
         repo_name = repo_url.split("/")[-1].split(".")[0] + "-" + str(id)
 
@@ -32,7 +33,7 @@ async def notify(payload: dict):
             # TODO: send notification
             return_msg = {"status": "ok"}
         else:
-            return_msg = {"status": "cloned"}
+            return_msg = {"status": "syntax error"}
 
         delete_repo(repo_name)
 
