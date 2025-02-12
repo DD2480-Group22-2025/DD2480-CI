@@ -3,6 +3,7 @@ import os
 import subprocess
 import shutil
 import stat
+import time
 def check_syntax(repo):
     # this function checks the syntax of the code using pylint
     # returns true or false based on if the syntax passes
@@ -41,9 +42,10 @@ def clone_repo(repo_url):
                     os.chmod(os.path.join(root, directory), stat.S_IRWXU)
                 for name in dirs:
                     os.chmod(os.path.join(root, name), stat.S_IRWXU)
+            os.chmod(root, stat.S_IRWXU)
             shutil.rmtree("./cloned_repo", ignore_errors=False)
             print("removed cloned_repo")
-
+            time.sleep(2)
         except Exception as e:
             print("Error in removing cloned_repo: ", e)
             return False
