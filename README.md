@@ -4,6 +4,8 @@
 
 This project implements a Continuous Integration (CI) server that supports CI features such as compilation, syntax checking, testing, result notifications, and build history!
 
+https://3248-2001-6b0-1-1041-e3a-6d35-666c-2185.ngrok-free.app/
+
 ## Setup
 
 ### Prerequisites
