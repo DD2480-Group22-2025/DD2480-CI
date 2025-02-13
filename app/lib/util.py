@@ -94,7 +94,7 @@ def clone_repo(repo_url, id, branch):
         print(f"Error in cloning {repo_name}: {e}")
         return False
 
-def update_commit_status(commit_sha: str, state: str, description: str, context: str = "CI Notification") -> dict:
+def update_commit_status(commit_sha: str, state: str, description: str, context: str = "CI Notification", target_url: str = "") -> dict:
     """
     Update the commit status on GitHub using PyGithub.
 
@@ -137,7 +137,7 @@ def update_commit_status(commit_sha: str, state: str, description: str, context:
         # Create the new status directly without cleaning up old ones
         status = commit.create_status(
             state=state,
-            target_url="",
+            target_url=target_url,
             description=description,
             context=context
         )

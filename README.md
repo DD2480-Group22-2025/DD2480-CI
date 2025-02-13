@@ -1,7 +1,8 @@
 # DD2480-CI
 
-## Project Description 
-This project implements a Continuous Integration (CI) server that supports CI features such as compilation, syntax checking, testing, result notifications, and build history. 
+## Project Description
+
+This project implements a Continuous Integration (CI) server that supports CI features such as compilation, syntax checking, testing, result notifications, and build history!
 
 ## Setup
 
@@ -67,7 +68,7 @@ DD2480-CI/
 ├── requirements.txt           # Dependencies
 ├── start_services.sh          # Service starter script
 ├── stop_services.sh           # Service stop script
-├── report.md                  # report 
+├── report.md                  # report
 ├── README.md                  # readme file
 ├── LICENSE                    # MIT license
 ├── app/
@@ -78,7 +79,7 @@ DD2480-CI/
 │   |    └── util.py           # utility functions
 |   └── routers/
 │         ├── builds.py        # build pages
-│         └── notify.py        # router 
+│         └── notify.py        # router
 ├── tests/
 │   ├── test_syntax.py         # Tests for P1
 │   ├── test_runner.py         # Tests for P2
