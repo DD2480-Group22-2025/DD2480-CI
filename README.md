@@ -2,7 +2,7 @@
 
 ## Project Description
 
-This project implements a Continuous Integration (CI) server that supports CI features such as compilation, syntax checking, testing, result notifications, and build history!
+This project implements a Continuous Integration (CI) server that supports CI features such as compilation, syntax checking, testing, result notifications, and build history.
 
 ## Setup
 
