@@ -2,12 +2,12 @@
 Small library for querying the build history database.
 Uses SQLAlchemy ORM for database operations.
 """
+import os
 from datetime import datetime
 from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
-import os
 
 # Database configuration
 SQLALCHEMY_DATABASE_URL = "sqlite:///database/CI.db"

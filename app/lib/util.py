@@ -1,8 +1,7 @@
 import os
-import subprocess
 import shutil
 import stat
-import time
+import subprocess
 from github import Github, Auth 
 from typing import Dict, Any
 def run_tests(repo_path: str) -> Dict[str, Any]:
@@ -13,16 +12,16 @@ def run_tests(repo_path: str) -> Dict[str, Any]:
     try:
         # Store current directory
         original_dir = os.getcwd()
-        
+
         # Change to repo directory
         os.chdir(repo_path)
-        
+
         # Run tests and capture output
         result = subprocess.run(['pytest'], capture_output=True, text=True)
-        
+
         # Change back to original directory
         os.chdir(original_dir)
-        
+
         return {
             "success": result.returncode == 0,
             "output": result.stdout,
@@ -41,6 +40,9 @@ def run_tests(repo_path: str) -> Dict[str, Any]:
 
 
 def check_syntax(repo):
+    """Try to run a linting check on a given repo using the pylint utility.
+    Will print to stdout if the repo can't be found.
+    """
     if not os.path.exists(repo):
         print("File does not exist")
         return False
@@ -49,29 +51,32 @@ def check_syntax(repo):
         python_files = [os.path.join(root, file) 
                        for root, _, files in os.walk(repo)
                        for file in files if file.endswith('.py')]
-        
+
         if not python_files:
             print("No Python files found to check")
             return True
-            
+
         # Check all Python files in a single pylint call
         syntax = subprocess.run(["pylint"] + python_files + ["--errors-only"], 
                               capture_output=True, text=True)
-        
+
         # Check both stdout and stderr for syntax errors
         output = syntax.stdout + syntax.stderr
         if "syntax-error" in output.lower():
             print("Syntax errors found")
             return False
-        
+
         print("Syntax check passed with no errors.")
         return True
-        
+
     except Exception as e:
         print("Error in syntax check:", e)
         return False
 
 def clone_repo(repo_url, id, branch):
+    """Tries to clone a github repo from the given repo_url, id and branch.
+    The cloned repo will be saved under ./cloned_repo. Prints errors to stdout.
+    """
     if not repo_url.startswith("https://github.com"):
         print("Invalid GitHub repo URL")
         return False
@@ -122,13 +127,13 @@ def update_commit_status(commit_sha: str, state: str, description: str, context:
         # Create Github instance with new auth method and timeout
         auth = Auth.Token(token)
         g = Github(auth=auth, timeout=10)
-        
+
         # Get repository with timeout
         repo = g.get_repo(f"{repo_owner}/{repo_name}")
-        
+
         # Get commit with timeout
         commit = repo.get_commit(commit_sha)
-        
+
         # Create the new status directly without cleaning up old ones
         status = commit.create_status(
             state=state,
@@ -136,10 +141,10 @@ def update_commit_status(commit_sha: str, state: str, description: str, context:
             description=description,
             context=context
         )
-        
+
         # Close the Github connection
         g.close()
-        
+
         return status.raw_data
     except Exception as e:
         print(f"GitHub API Error: {str(e)}")
@@ -150,10 +155,12 @@ def update_commit_status(commit_sha: str, state: str, description: str, context:
             "context": context,
             "error": str(e)
         }
-    
-        
+
+
 def delete_repo(repo_name):
-    # delete the cloned repo
+    """ Tries to eletes a clone repo specified by the path ./cloned_repo.
+    Will print to stdout on failure to delete repo.
+    """
     repo_path = os.path.join("./cloned_repo", repo_name)
     if os.path.exists(repo_path):
         try:
@@ -165,7 +172,7 @@ def delete_repo(repo_name):
             os.chmod(root, stat.S_IRWXU)
             shutil.rmtree(repo_path, ignore_errors=False)
             print(f"{repo_name} was deleted successfully!")
-            
+
             return True
         except Exception as e:
             print(f"Error in removing {repo_name}: ", e)

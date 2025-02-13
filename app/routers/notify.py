@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Request, HTTPException
 import os
-import sys
-import subprocess
 import shutil
-sys.path.append('app/lib')
-from util import clone_repo, update_commit_status, delete_repo
+import subprocess
+import sys
+from dotenv import load_dotenv
+from fastapi import APIRouter, Request, HTTPException
 from typing import Dict, Any
 from pydantic import BaseModel
-from dotenv import load_dotenv
+
+sys.path.append('app/lib')
+from util import clone_repo, update_commit_status, delete_repo
 
 # Load environment variables from a .env file, if present
 load_dotenv()
