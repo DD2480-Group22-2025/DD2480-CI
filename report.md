@@ -41,7 +41,8 @@ Testing Guidelines
 
 [ Phoebe ]
 - core CI feature #1 for compiling and syntax checking
-- testing for compiling and syntax checking
+- unit testing for compiling and syntax checking
+- update report
 
 [ Samuel ]
 - setup server & infrastructure
