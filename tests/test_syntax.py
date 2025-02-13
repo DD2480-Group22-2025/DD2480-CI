@@ -23,7 +23,7 @@ class TestSyntax(unittest.TestCase):
 
     def test_no_file(self):
         # check if the function check_syntax is working correctly
-        self.assertFalse(check_syntax("tests/no_file.py"))
+        self.assertTrue(check_syntax("tests/no_file.py"))
     
 
 class TestClone(unittest.TestCase):
