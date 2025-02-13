@@ -6,7 +6,7 @@ This project implements a Continuous Integration (CI) server that supports CI fe
 
 https://0ae1-2001-6b0-1-1041-e3a-6d35-666c-2185.ngrok-free.app/
 
-## Setup!
+## Setup
 
 ### Prerequisites
 
