@@ -79,6 +79,14 @@ async def get_builds():
                 .build-item a:hover {
                     text-decoration: underline;
                 }
+                .branch-tag {
+                    display: inline-block;
+                    background-color: #e1e4e8;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-size: 0.9em;
+                    margin-left: 8px;
+                }
             </style>
         </head>
         <body>
@@ -89,12 +97,14 @@ async def get_builds():
     for build in builds:
         build_id = build[0]
         commit_hash = build[1]
-        date = build[2]
+        branch = build[2]
+        date = build[3]
         html_content += f"""
                 <li class="build-item">
                     <a href="/builds/{build_id}">
                         Build #{build_id} - Commit: {commit_hash} - Date: {date}
                     </a>
+                    <span class="branch-tag">{branch}</span>
                 </li>
         """
     
@@ -128,9 +138,14 @@ async def get_build(build_id: str):
     
     build = build[0]
     commit_hash = build[1]
-    date = build[2]
-    test_result = build[3]
-    lint_result = build[4]
+    branch = build[2]
+    date = build[3]
+    test_syntax_result = build[4]
+    test_notifier_result = build[5]
+    test_CI_result = build[6]
+    test_syntax_log = build[7]
+    test_notifier_log = build[8]
+    test_CI_log = build[9]
     
     html_content = f"""
     <html>
@@ -145,14 +160,43 @@ async def get_build(build_id: str):
                     background-color: #f5f5f5;
                     padding: 20px;
                     border-radius: 5px;
+                    margin-bottom: 20px;
                 }}
-                .build-log {{
+                .branch-tag {{
+                    display: inline-block;
+                    background-color: #e1e4e8;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-size: 0.9em;
+                    margin-left: 8px;
+                }}
+                .test-section {{
+                    margin-top: 20px;
+                    padding: 15px;
+                    border-radius: 5px;
+                }}
+                .test-section.success {{
+                    background-color: #e8f5e9;
+                    border: 1px solid #c8e6c9;
+                }}
+                .test-section.failure {{
+                    background-color: #ffebee;
+                    border: 1px solid #ffcdd2;
+                }}
+                .test-section.error {{
+                    background-color: #fff3e0;
+                    border: 1px solid #ffe0b2;
+                }}
+                .test-log {{
                     background-color: #2b2b2b;
                     color: #ffffff;
                     padding: 15px;
                     border-radius: 5px;
                     white-space: pre-wrap;
                     font-family: monospace;
+                    margin-top: 10px;
+                    max-height: 400px;
+                    overflow-y: auto;
                 }}
             </style>
         </head>
@@ -162,15 +206,34 @@ async def get_build(build_id: str):
             </div>
             <div class="build-details">
                 <h1>Build #{build_id}</h1>
-                <p><strong>Commit Hash:</strong> {commit_hash}</p>
+                <p>
+                    <strong>Commit Hash:</strong> {commit_hash}
+                    <span class="branch-tag">{branch}</span>
+                </p>
                 <p><strong>Build Date:</strong> {date}</p>
-                <h2>Test-log Log:</h2>
-                <div class="Linter-log">
-                    {test_result}
+            </div>
+            
+            <div class="test-section {test_syntax_result}">
+                <h2>Syntax Test Results</h2>
+                <p><strong>Status:</strong> {test_syntax_result}</p>
+                <div class="test-log">
+                    {test_syntax_log}
                 </div>
-                <h2>Linter-log:</h2>
-                <div class="Test-log">
-                    {lint_result}
+            </div>
+            
+            <div class="test-section {test_notifier_result}">
+                <h2>Notifier Test Results</h2>
+                <p><strong>Status:</strong> {test_notifier_result}</p>
+                <div class="test-log">
+                    {test_notifier_log}
+                </div>
+            </div>
+            
+            <div class="test-section {test_CI_result}">
+                <h2>CI Test Results</h2>
+                <p><strong>Status:</strong> {test_CI_result}</p>
+                <div class="test-log">
+                    {test_CI_log}
                 </div>
             </div>
         </body>

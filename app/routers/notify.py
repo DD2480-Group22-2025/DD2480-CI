@@ -5,6 +5,7 @@ import subprocess
 import shutil
 sys.path.append('app/lib')
 from util import clone_repo, update_commit_status, delete_repo
+from database_api import create_new_entry
 from typing import Dict, Any
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -152,7 +153,6 @@ async def notify(payload: WebhookPayload):
     # Initial status set to pending
     for context in test_contexts:
         try:
-
             update_commit_status(commit_sha, "pending", "Setting up CI environment", context)
         except Exception as e:
             print(f"Failed to set initial status for {context}: {str(e)}")
@@ -190,35 +190,70 @@ async def notify(payload: WebhookPayload):
     ]
 
     try:
+        test_results = {}
         for test_name, test_file in test_files:
             print(f"\n=== Starting {test_name} ===")
             
             try:
-                test_results = run_test_file(repo_path, test_file)
-                status = "success" if test_results["success"] else "failure"
-                description = (f"{test_name} passed" if test_results["success"] 
-                             else f"{test_name} failed: {test_results.get('error', '')[:140]}")
+                test_result = run_test_file(repo_path, test_file)
+                status = "success" if test_result["success"] else "failure"
+                description = (f"{test_name} passed" if test_result["success"] 
+                             else f"{test_name} failed: {test_result.get('error', '')[:140]}")
                 
                 print(f"DEBUG: {test_name} results:")
                 print(f"DEBUG: Status: {status}")
                 print(f"DEBUG: Description: {description}")
                 
-                update_commit_status(commit_sha, status, description, f"CI/{test_name}")
-                
-                result["steps"][test_name] = {
+                test_results[test_name] = {
                     "status": status,
                     "description": description,
-                    "output": test_results.get("output", ""),
-                    "error": test_results.get("error", "")
+                    "output": test_result.get("output", ""),
+                    "error": test_result.get("error", "")
                 }
+                
+                result["steps"][test_name] = test_results[test_name]
             except Exception as e:
                 error_msg = f"Test execution error: {str(e)}"
                 print(f"DEBUG: Error in {test_name}: {error_msg}")
-                update_commit_status(commit_sha, "error", error_msg, f"CI/{test_name}")
-                result["steps"][test_name] = {
+                test_results[test_name] = {
                     "status": "error",
-                    "description": error_msg
+                    "description": error_msg,
+                    "output": "",
+                    "error": str(e)
                 }
+                result["steps"][test_name] = test_results[test_name]
+
+        # Store results in database
+        try:
+            build_id = create_new_entry(
+                commit_hash=commit_sha,
+                branch=branch,
+                test_syntax_result=test_results["test_syntax"]["status"],
+                test_notifier_result=test_results["test_notifier"]["status"],
+                test_CI_result=test_results["test_CI"]["status"],
+                test_syntax_log=test_results["test_syntax"]["output"] + "\n" + test_results["test_syntax"].get("error", ""),
+                test_notifier_log=test_results["test_notifier"]["output"] + "\n" + test_results["test_notifier"].get("error", ""),
+                test_CI_log=test_results["test_CI"]["output"] + "\n" + test_results["test_CI"].get("error", "")
+            )
+            
+            # Update GitHub status with links to build details
+            for test_name in test_results:
+                status = test_results[test_name]["status"]
+                description = test_results[test_name]["description"]
+                update_commit_status(
+                    commit_sha, 
+                    status, 
+                    description, 
+                    f"CI/{test_name}",
+                    target_url=f"/builds/{build_id}"
+                )
+        except Exception as e:
+            print(f"Failed to store build results: {str(e)}")
+            # Still update GitHub status but without build links
+            for test_name in test_results:
+                status = test_results[test_name]["status"]
+                description = test_results[test_name]["description"]
+                update_commit_status(commit_sha, status, description, f"CI/{test_name}")
 
     except Exception as e:
         error_msg = f"CI process error: {str(e)}"
