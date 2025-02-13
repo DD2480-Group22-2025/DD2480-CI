@@ -33,7 +33,8 @@ Testing Guidelines
 
 [ Jacob ]
 - core CI feature for #2 testing
-- testing the database
+- database and history of past builds setup
+- database testing
 
 [ Klara ]
 - core CI feature #3 for notifications
